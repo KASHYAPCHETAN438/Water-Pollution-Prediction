@@ -85,3 +85,5 @@ app = create_app()
 if __name__ == '__main__':
     # You can set host='0.0.0.0' to listen on all interfaces or leave default (127.0.0.1)
     app.run(debug=True)
+    
+    
