@@ -33,7 +33,7 @@ const Login: React.FC = () => {
       if (!token) throw new Error('Missing token in response');
 
       login(token);
-      navigate('/predict');
+      navigate('pridict');
 
     } catch (err) {
       setError('Invalid email or password.');

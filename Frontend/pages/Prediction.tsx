@@ -1,705 +1,660 @@
-import React, { useState, useRef, useEffect } from 'react';
-
-// --- MOCK/STUB DEFINITIONS ---
-// Stubs for libraries or hooks not available in a single file environment
-const useAuth = () => ({ token: 'mock-token' });
-
-// Define a generic component type to suppress TypeScript errors related to framer-motion props
-type MotionStubComponent = React.FC<any>;
-
-// Updated motion stub to use generic props (any) to resolve the Type is missing properties errors
-const motion: Record<string, MotionStubComponent> = {
-  // Destructure and discard framer-motion props before spreading to native elements
-  button: (props: any) => {
-    const { children, whileHover, whileTap, initial, animate, transition, ...restProps } = props;
-    return <button {...restProps}>{children}</button>;
-  },
-  div: (props: any) => {
-    const { children, whileHover, whileTap, initial, animate, transition, ...restProps } = props;
-    return <div {...restProps}>{children}</div>;
-  },
-};
-// --- END MOCK/STUB DEFINITIONS ---
-
-
-// --- TYPE DEFINITIONS ---
-// Define the type for the WaterParameter structure
-type WaterParameter = {
-  name: string;
-  // value tracks the selected state: 'Low', 'Average', 'High'
-  value: 'Low' | 'Average' | 'High'; 
-  unit: string;
-  icon: string;
-  options: Record<string, { range: string; description: string }>;
-};
-
-// Define props for WaterParameterSlider
-type WaterParameterSliderProps = {
-  parameter: WaterParameter;
-  onChange: (value: 'Low' | 'Average' | 'High') => void;
-};
+import React, { useState } from 'react';
+import { useAuth } from '../App';
 
 type FormState = {
-  temperature: string;
-  dissolvedOxygen: string;
-  ph: string;
-  conductivity: string;
-  bod: string;
-  nitrate: string;
-  fecalColiform: string;
-  totalColiform: string;
+  temperature: string;
+  dissolvedOxygen: string;
+  ph: string;
+  conductivity: string;
+  bod: string;
+  nitrate: string;
+  fecalColiform: string;
+  totalColiform: string;
 };
 
 const initialState: FormState = {
-  temperature: '',
-  dissolvedOxygen: '',
-  ph: '',
-  conductivity: '',
-  bod: '',
-  nitrate: '',
-  fecalColiform: '',
-  totalColiform: '',
+  temperature: '',
+  dissolvedOxygen: '',
+  ph: '',
+  conductivity: '',
+  bod: '',
+  nitrate: '',
+  fecalColiform: '',
+  totalColiform: '',
 };
 
-type BackButtonProps = {
-  goToChooser: () => void;
-}
-// --- END TYPE DEFINITIONS ---
-
-
-// --- WATER PARAMETER SLIDER COMPONENT (FIXED) ---
-
-const WaterParameterSlider: React.FC<WaterParameterSliderProps> = ({ parameter, onChange }) => {
-  const displayValue = parameter.value;
-
-  const currentOptions = parameter.options;
-
-  // Function to determine the icon/color for the selected status
-  const getStatusColor = (key: string, isActive: boolean) => {
-    // Attractive, descriptive colors based on status
-    if (isActive) {
-      if (key === 'Low') return 'border-orange-500 bg-orange-50 text-orange-800 shadow-lg ring-4 ring-orange-100';
-      if (key === 'High') return 'border-red-500 bg-red-50 text-red-800 shadow-lg ring-4 ring-red-100';
-      // Default/Average (Ideal) is Cyan/Blue
-      return 'border-cyan-500 bg-cyan-50 text-cyan-800 shadow-lg ring-4 ring-cyan-200';
-    }
-    // Inactive state - Clean and subtle
-    return 'bg-gray-50 text-gray-700 border-2 border-gray-200 hover:bg-gray-100 hover:border-cyan-300';
-  }
-  
-  // Custom Icon based on status - replacing the generic thumbs up/down emojis
-  const getCustomIcon = (key: string) => {
-    if (key === 'Average') return '✨'; // Ideal/Optimal
-    if (key === 'Low') return '⬇';    // Low/Under
-    if (key === 'High') return '⬆';   // High/Over
-    return '';
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
-      className="p-5 bg-white rounded-2xl shadow-xl border border-gray-100 h-full flex flex-col"
-    >
-      <h4 className="flex items-center text-xl font-bold text-gray-800 mb-4"> 
-        <span className="mr-3 text-3xl">{parameter.icon}</span>
-        {parameter.name}
-      </h4>
-      <div className="flex flex-col space-y-3 flex-grow"> 
-        {Object.keys(currentOptions).map(key => {
-          const isActive = key === displayValue;
-          const option = currentOptions[key];
-          
-          // Get dynamic styles based on status and active state
-          const statusClasses = getStatusColor(key, isActive);
-
-          return (
-            <motion.button
-              key={key}
-              // Improved hover/tap effects
-              whileHover={{ scale: 1.01, boxShadow: '0 5px 15px rgba(0, 0, 0, 0.08)' }} 
-              whileTap={{ scale: 0.99 }}
-              onClick={() => onChange(key as 'Low' | 'Average' | 'High')}
-              // Corrected: Use template literal (backticks) for className to inject dynamic variables
-              className={`w-full flex flex-col items-start p-4 rounded-xl transition-all duration-300 text-base font-semibold border-2 
-                ${statusClasses} text-left
-              `}
-            >
-              <div className="flex items-center mb-1">
-                {/* Icon and Status Name (Left side) - CORRECTED CLASS SYNTAX */}
-                <span className={`text-xl mr-2 font-black ${isActive ? 'text-current' : 'text-gray-400'}`}>{getCustomIcon(key)}</span>
-                {/* Status Name - CORRECTED CLASS SYNTAX */}
-                <span className={`font-extrabold text-lg ${isActive ? 'text-current' : 'text-gray-800'}`}>{key}</span>
-              </div>
-              
-              {/* Description (Full width, left-aligned text) - CORRECTED CLASS SYNTAX */}
-              <span className={`text-sm text-left font-medium ${isActive ? 'text-current' : 'text-gray-600'} block w-full mt-1`}>
-                {option.description}
-              </span>
-            </motion.button>
-          );
-        })}
-      </div>
-    </motion.div>
-  );
-};
-// --- END WATER PARAMETER SLIDER COMPONENT ---
-
-
-// --- DATA & HELPER FUNCTIONS ---
-const parameterRanges = {
-  temperature: {
-    min: 0,
-    max: 35,
-    unit: '°C',
-    name: 'Temperature'
-  },
-  dissolvedOxygen: {
-    min: 0,
-    max: 14,
-    unit: 'mg/L',
-    name: 'Dissolved Oxygen'
-  },
-  ph: {
-    min: 0,
-    max: 14,
-    unit: '',
-    name: 'pH'
-  },
-  conductivity: {
-    min: 0,
-    max: 1000,
-    unit: 'µmho/cm',
-    name: 'Conductivity'
-  },
-  bod: {
-    min: 0,
-    max: 500,
-    unit: 'mg/L',
-    name: 'BOD (Biochemical Oxygen Demand)'
-  },
-  nitrate: {
-    min: 0,
-    max: 50,
-    unit: 'mg/L',
-    name: 'Nitrate N'
-  },
-  fecalColiform: {
-    min: 0,
-    max: 200,
-    unit: 'MPN/100ml',
-    name: 'Fecal Coliform'
-  },
-  totalColiform: {
-    min: 0,
-    max: 500,
-    unit: 'MPN/100ml',
-    name: 'Total Coliform'
-  }
-};
-
-const BackButton: React.FC<BackButtonProps> = ({ goToChooser }) => {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05, boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)' }}
-      whileTap={{ scale: 0.95 }}
-      onClick={goToChooser}
-      className="absolute top-4 left-4 z-10 flex items-center px-4 py-2 text-gray-700 bg-white rounded-full shadow-lg border border-gray-200 transition-all duration-150"
-    >
-      <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-      </svg>
-      Back to Selection
-    </motion.button>
-  );
-};
-
-const getResultStyle = (quality: 'Safe' | 'Moderate' | 'Unsafe') => {
-  switch (quality) {
-    case 'Safe':
-      return {
-        bg: 'bg-green-100 border-green-500',
-        circleBg: 'from-green-500 to-emerald-600',
-        text: 'text-green-800',
-        icon: '✅'
-      };
-    case 'Moderate':
-      return {
-        bg: 'bg-yellow-100 border-yellow-500',
-        circleBg: 'from-amber-500 to-orange-600',
-        text: 'text-yellow-800',
-        icon: '⚠'
-      };
-    case 'Unsafe':
-      return {
-        bg: 'bg-red-100 border-red-500',
-        circleBg: 'from-red-500 to-pink-600',
-        text: 'text-red-800',
-        icon: '🚫'
-      };
-    default:
-      return {
-        bg: 'bg-gray-100 border-gray-500',
-        circleBg: 'from-gray-500 to-gray-600',
-        text: 'text-gray-800',
-        icon: '❔'
-      };
-  }
-};
-// --- END DATA & HELPER FUNCTIONS ---
-
-
-// --- MAIN PREDICTION COMPONENT ---
 const Prediction: React.FC = () => {
-  const { token } = useAuth();
-  const [formData, setFormData] = useState<FormState>(initialState);
-  const [prediction, setPrediction] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [waterType, setWaterType] = useState<'river' | 'tap' | null>(null);
+  const { token } = useAuth();
+  const [formData, setFormData] = useState<FormState>(initialState);
+  const [waterType, setWaterType] = useState<'river' | 'tap'>('river');
+  const [showForm, setShowForm] = useState(false);
 
-  // Initial parameters state (for Tap Water view)
-  const [parameters, setParameters] = useState<WaterParameter[]>([
-    {
-      name: 'pH Level',
-      value: 'Average',
-      unit: 'pH',
-      icon: '⚗',
-      options: {
-        Low: {
-          range: '< 6.5 (Acidic)',
-          description: 'Tastes sour or causes blue/green stains/corrosion on pipes.'
-        },
-        Average: {
-          range: '6.5 - 8.5 (Ideal)',
-          description: 'Tastes neutral, no abnormal pipe issues.'
-        },
-        High: {
-          range: '> 8.5 (Alkaline)',
-          description: 'Feels slippery or causes scaling/white crusty deposits.'
-        }
-      },
-    },
-    {
-      name: 'Hardness',
-      value: 'Average',
-      unit: 'mg/L',
-      icon: '💎',
-      options: {
-        Low: {
-          range: '< 60 (Soft)',
-          description: 'Soap lathers very easily, no spots on dishes.'
-        },
-        Average: {
-          range: '60 - 120 (Optimal)',
-          description: 'Soap lathers well, minimal spotting/scale buildup.'
-        },
-        High: {
-          range: '> 120 (Hard)',
-          description: 'Soap won\'t lather easily, heavy residue/scale on fixtures.'
-        }
-      },
-    },
-    {
-      name: 'Chloramines',
-      value: 'Average',
-      unit: 'mg/L',
-      icon: '🧪',
-      options: {
-        Low: {
-          range: '0 - 1 (Minimal)',
-          description: 'No noticeable chemical taste or smell.'
-        },
-        Average: {
-          range: '1 - 3 (Common)',
-          description: 'Faint, common chlorine smell/taste.'
-        },
-        High: {
-          range: '> 3 (High)',
-          description: 'Strong bleach-like smell or chemical taste.'
-        }
-      },
-    },
-    {
-      name: 'Sulfate',
-      value: 'Average',
-      unit: 'mg/L',
-      icon: '⚡',
-      options: {
-        Low: {
-          range: '< 250 (Low Risk)',
-          description: 'Tastes normal, no unusual flavor.'
-        },
-        Average: {
-          range: '250 - 500 (Moderate)',
-          description: 'May taste slightly bitter or metallic.'
-        },
-        High: {
-          range: '> 500 (High Risk)',
-          description: 'Strong bitter or salty taste, possible discomfort.'
-        }
-      },
-    },
-    {
-      name: 'Turbidity',
-      value: 'Average',
-      unit: 'NTU',
-      icon: '🌫',
-      options: {
-        Low: {
-          range: '< 1 (Clear)',
-          description: 'Water is crystal clear in a glass.'
-        },
-        Average: {
-          range: '1 - 5 (Acceptable)',
-          description: 'Water is slightly hazy or cloudy.'
-        },
-        High: {
-          range: '> 5 (Poor)',
-          description: 'Visibly murky, cloudy, or contains noticeable particles.'
-        }
-      },
-    }
-  ]);
+  // Tap parameters: Low/Average/High selections
+  type TapParam = { name: string; value: 'Low' | 'Average' | 'High'; description?: string };
+  type TapPayload = {
+    ph: number;
+    Hardness: number;
+    Chloramines: number;
+    Sulfate: number;
+    Turbidity: number;
+  };
 
-  const formRef = useRef<HTMLFormElement | null>(null);
+  const [tapParams, setTapParams] = useState<TapParam[]>([
+    { name: 'pH Level', value: 'Average', description: 'pH of tap water' },
+    { name: 'Hardness', value: 'Average', description: 'Hardness (scale)' },
+    { name: 'Chloramines', value: 'Average', description: 'Chloramine level' },
+    { name: 'Sulfate', value: 'Average', description: 'Sulfate level' },
+    { name: 'Turbidity', value: 'Average', description: 'Cloudiness (NTU)' },
+  ]);
 
-  const [tapResult, setTapResult] = useState<{ quality: 'Safe' | 'Moderate' | 'Unsafe'; explanation: string } | null>(null);
+  const [prediction, setPrediction] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Function to go back to the chooser view
-  const goToChooser = () => {
-    setWaterType(null);
-    setPrediction(null);
-    setTapResult(null);
-    setError(null);
-    setFormData(initialState);
-  }
+  // ---------------- Handlers ----------------
 
-  // Handle water type selection
-  const handleChoose = (type: 'river' | 'tap') => {
-    setWaterType(type);
-    setPrediction(null);
-    setTapResult(null);
-    setError(null);
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
-  // Handle parameter selection change (for Tap Water view)
-  const handleParameterChange = (name: string, value: 'Low' | 'Average' | 'High') => {
-      const newParams = parameters.map(p => {
-          if (p.name === name) {
-              return { ...p, value: value };
-          }
-          return p;
-      });
-      setParameters(newParams);
-  }
+  const handleTapParamChange = (name: string, value: 'Low' | 'Average' | 'High') => {
+    setTapParams(prev => prev.map(p => (p.name === name ? { ...p, value } : p)));
+  };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setError(null);
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const randomInt = (min: number, max: number) => {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
 
-  const validateParameters = (data: FormState): string[] => {
-    const errors: string[] = [];
-    Object.entries(data).forEach(([key, value]) => {
-      const range = (parameterRanges as any)[key];
-      if (!range) return;
-      const num = parseFloat(String(value));
-      if (String(value).trim() === '' || isNaN(num)) {
-        errors.push(`- ${range.name} is required and must be a number`);
-        return;
-      }
-      if (num < range.min || num > range.max) {
-        errors.push(`- ${range.name} must be between ${range.min} and ${range.max} ${range.unit}`);
-      }
-    });
-    return errors;
-  };
+  // Tap L/A/H → numeric ranges (aligned with training thresholds you used)
+  const convertTapToNumeric = (params: TapParam[]): TapPayload => {
+    // Default
+    const numeric: TapPayload = {
+      ph: 7,
+      Hardness: 200,
+      Chloramines: 7,
+      Sulfate: 320,
+      Turbidity: 4,
+    };
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-    setPrediction(null);
-    setTapResult(null);
+    params.forEach(p => {
+      const key = p.name.toLowerCase();
+      const v = p.value;
 
-    // River Water Prediction Logic (Input Form)
-    if (waterType === 'river') {
-      const validationErrors = validateParameters(formData);
-      if (validationErrors.length) {
-        setError(`Please correct the following input errors:\n${validationErrors.join('\n')}`);
-        setIsLoading(false);
-        return;
-      }
+      // Training reference:
+      // ph:        Low < 5.11, Avg 5.11–9.07, High > 9.07
+      // Hardness:  Low < 154.5, Avg 154.5–235.8, High > 235.8
+      // Chloram.:  Low < 5.19, Avg 5.19–9.14, High > 9.14
+      // Sulfate:   Low < 283.2, Avg 283.2–384.8, High > 384.8
+      // Turbidity: Low < 2.94, Avg 2.94–4.96, High > 4.96
 
-      // TODO: Replace with real API call
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-      const simulated = 'Moderate Polluted';
-      setPrediction(simulated);
-      setIsLoading(false);
-      return;
-    }
+      if (key.includes('ph')) {
+        if (v === 'Low') numeric.ph = randomInt(1, 5);
+        else if (v === 'Average') numeric.ph = randomInt(6, 9);
+        else numeric.ph = randomInt(10, 14);
+      }
 
-    // Tap Water Prediction Logic (Sliders)
-    if (waterType === 'tap') {
-      
-      // Use the selected value (Low/Average/High) for the payload
-      const payload = parameters.reduce((acc, p) => {
-        acc[p.name.toLowerCase().replace(/\s+/g, '_')] = p.value;
-        return acc;
-      }, {} as Record<string, any>);
-      
-      // TODO: Replace with real API call
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
+      if (key.includes('hard')) {
+        if (v === 'Low') numeric.Hardness = randomInt(50, 150);
+        else if (v === 'Average') numeric.Hardness = randomInt(155, 236);
+        else numeric.Hardness = randomInt(237, 400);
+      }
 
-      // Simple simulation logic based on selected parameters
-      // Counts how many parameters are selected as 'Low' or 'High' (not 'Average')
-      const poorCount = parameters.filter(p => p.value === 'High' || p.value === 'Low').length;
-      let quality: 'Safe' | 'Moderate' | 'Unsafe' = 'Safe';
-      let explanation = 'Based on your selections (measured or experiential), the tap water parameters are generally within safe and desirable limits.';
+      if (key.includes('chlor')) {
+        if (v === 'Low') numeric.Chloramines = randomInt(1, 5);
+        else if (v === 'Average') numeric.Chloramines = randomInt(6, 9);
+        else numeric.Chloramines = randomInt(10, 15);
+      }
 
-      if (poorCount >= 2) {
-        quality = 'Moderate';
-        explanation = 'The readings in two or more parameters suggest moderate quality. While generally safe, further professional testing or attention to filtration is recommended.';
-      }
-      if (poorCount >= 4) {
-        quality = 'Unsafe';
-        explanation = 'Multiple parameters show poor quality readings (Low/High). We recommend avoiding consumption without proper filtration or seeking professional testing.';
-      }
+      if (key.includes('sulfate')) {
+        if (v === 'Low') numeric.Sulfate = randomInt(50, 280);
+        else if (v === 'Average') numeric.Sulfate = randomInt(284, 385);
+        else numeric.Sulfate = randomInt(386, 600);
+      }
 
-      setTapResult({ quality, explanation });
-      setIsLoading(false);
-      return;
-    }
+      if (key.includes('turb')) {
+        if (v === 'Low') numeric.Turbidity = randomInt(0, 2);
+        else if (v === 'Average') numeric.Turbidity = randomInt(3, 5);
+        else numeric.Turbidity = randomInt(6, 10);
+      }
+    });
 
-    setIsLoading(false);
-  };
+    return numeric;
+  };
 
-  // Chooser view (no type selected)
-  if (!waterType) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-cyan-100 py-12 px-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-4xl w-full"
-        >
-          <h1 className="text-5xl font-extrabold text-center mb-12 text-gray-800">
-            Water Quality <span className="text-cyan-600">Analyzer</span>
-          </h1>
+  const resetAll = () => {
+    setFormData(initialState);
+    setPrediction(null);
+    setError(null);
+    setIsLoading(false);
+    setTapParams([
+      { name: 'pH Level', value: 'Average', description: 'pH of tap water' },
+      { name: 'Hardness', value: 'Average', description: 'Hardness (scale)' },
+      { name: 'Chloramines', value: 'Average', description: 'Chloramine level' },
+      { name: 'Sulfate', value: 'Average', description: 'Sulfate level' },
+      { name: 'Turbidity', value: 'Average', description: 'Cloudiness (NTU)' },
+    ]);
+  };
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* River Card */}
-            <motion.div
-              whileHover={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
-              whileTap={{ scale: 0.98 }}
-              className="p-10 rounded-3xl bg-white border-4 border-cyan-200 shadow-xl transition duration-300 text-center relative overflow-hidden group cursor-pointer"
-              onClick={() => handleChoose('river')}
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-100 rounded-bl-3xl opacity-50 transition duration-300"></div>
-              <span className="text-6xl mb-4 block transform group-hover:scale-110 transition duration-300">🌊</span>
-              <h2 className="text-3xl font-extrabold mb-3 text-gray-800">River Water</h2>
-              <p className="text-slate-600 mb-8 font-medium">Predict the ecological status and pollution level of natural water bodies.</p>
-              <button
-                className="inline-flex items-center py-3 px-8 bg-gradient-to-r from-cyan-600 to-blue-500 text-white rounded-full font-semibold shadow-lg hover:from-cyan-700 hover:to-blue-600 transition-all transform hover:scale-105"
-              >
-                Start River Prediction
-              </button>
-            </motion.div>
+  // Generic submit (river/tap)
+  const submitPrediction = async (payload: any, endpoint = '/api/prediction/predict') => {
+    setIsLoading(true);
+    setError(null);
+    setPrediction(null);
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
 
-            {/* Tap Card */}
-            <motion.div
-              whileHover={{ scale: 1.05, boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}
-              whileTap={{ scale: 0.98 }}
-              className="p-10 rounded-3xl bg-white border-4 border-blue-200 shadow-xl transition duration-300 text-center relative overflow-hidden group cursor-pointer"
-              onClick={() => handleChoose('tap')}
-            >
-              <div className="absolute top-0 right-0 w-24 h-24 bg-blue-100 rounded-bl-3xl opacity-50 transition duration-300"></div>
-              <span className="text-6xl mb-4 block transform group-hover:scale-110 transition duration-300">🚰</span>
-              <h2 className="text-3xl font-extrabold mb-3 text-gray-800">Tap Water</h2>
-              <p className="text-slate-600 mb-8 font-medium">Evaluate the potability and safety of treated or household drinking water.</p>
-              <button
-                className="inline-flex items-center py-3 px-8 bg-gradient-to-r from-blue-600 to-indigo-500 text-white rounded-full font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-600 transition-all transform hover:scale-105"
-              >
-                Start Tap Prediction
-              </button>
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+      const result = await response.json();
 
-  // Tap view (Sliders / Q&A)
-  if (waterType === 'tap') {
-    const resultStyle = tapResult ? getResultStyle(tapResult.quality) : null;
-    
-    // Main Tap Water Slider View
-    return (
-      <div className="min-h-screen px-4 py-16 bg-gradient-to-br from-indigo-50 via-white to-cyan-100 relative">
-        <BackButton goToChooser={goToChooser} />
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="max-w-6xl mx-auto bg-white p-8 md:p-12 rounded-2xl shadow-2xl border-t-8 border-cyan-500"
-        >
-          <h1 className="text-4xl font-extrabold text-center mb-3 text-gray-800">Tap Water Quality Analysis</h1>
-          <p className="text-center text-gray-600 mb-8 text-lg">
-            Select the parameter that best matches your *sensory observations* (taste, feel, residue, smell).
-          </p>
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Prediction request failed');
+      }
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {parameters.map((param) => (
-              <WaterParameterSlider
-                key={param.name}
-                parameter={param}
-                onChange={(value) => handleParameterChange(param.name, value)}
-              />
-            ))}
-          </div>
+      const raw = String(result.prediction || '').trim();
+      const normalized = raw.toLowerCase();
 
-          <div className="mt-10 text-center">
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: '0 10px 15px rgba(6, 182, 212, 0.4)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => handleSubmit()}
-              disabled={isLoading}
-              className="px-10 py-4 bg-gradient-to-r from-cyan-600 to-blue-500 text-white rounded-full font-extrabold text-lg shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Analyzing...
-                </span>
-              ) : 'Predict Quality'}
-            </motion.button>
-          </div>
+      // River mapping
+      if (normalized.includes('pollut') || normalized.includes('not pot') || normalized.includes('unsafe')) {
+        setPrediction('Polluted');
+      } else if (normalized.includes('moderate') || normalized.includes('potable') || normalized.includes('safe')) {
+        setPrediction('Moderate');
+      } else {
+        // Tap model: "Low" / "Average" / "High"
+        setPrediction(raw);
+      }
+    } catch (err) {
+      console.error(err);
+      setError('An error occurred while fetching the prediction. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-          {tapResult && resultStyle && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className={`mt-10 p-8 rounded-2xl border-4 ${resultStyle.bg} border-l-8 ${resultStyle.text} shadow-2xl transition-all duration-300`}
-            >
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className={`w-32 h-32 flex-shrink-0 rounded-full bg-gradient-to-br ${resultStyle.circleBg} flex items-center justify-center text-white text-4xl font-extrabold shadow-2xl`}>
-                  {resultStyle.icon}
-                </div>
-                <div className={`flex-grow ${resultStyle.text}`}>
-                  <h3 className="text-3xl font-extrabold mb-2">Result: {tapResult.quality}</h3>
-                  <p className="text-lg">{tapResult.explanation}</p>
-                </div>
-              </div>
-            </motion.div>
-          )}
+  const handleRiverSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitPrediction(formData, '/api/prediction/river');
+  };
 
-          {error && <div className="mt-4 p-3 bg-red-50 border border-red-400 text-red-700 rounded-lg font-medium">{error}</div>}
-        </motion.div>
-      </div>
-    );
-  }
+  const handleTapSubmit = async () => {
+    const numericPayload = convertTapToNumeric(tapParams);
+    console.log('Tap numeric payload:', numericPayload);
+    await submitPrediction(numericPayload, '/api/prediction/tap-status');
+  };
 
-  // River view (Form) - Remains unchanged
-  return (
-    <div className="min-h-screen px-4 py-16 bg-gradient-to-br from-indigo-50 via-white to-cyan-100 relative">
-      <BackButton goToChooser={goToChooser} />
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="max-w-3xl mx-auto bg-white p-8 md:p-10 rounded-2xl shadow-2xl border-t-8 border-cyan-500"
-      >
-        <h2 className="text-4xl font-extrabold text-center mb-8 text-gray-800">River Water Parameters</h2>
-        <p className="text-center text-gray-600 mb-8 text-lg">Enter observed values for river water quality analysis.</p>
+  // ---------------- Explanation block ----------------
 
-        <form ref={formRef} onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            {[
-              { name: 'temperature', label: 'Temperature', placeholder: `(${parameterRanges.temperature.min}-${parameterRanges.temperature.max}${parameterRanges.temperature.unit})` },
-              { name: 'dissolvedOxygen', label: 'Dissolved Oxygen', placeholder: `(${parameterRanges.dissolvedOxygen.min}-${parameterRanges.dissolvedOxygen.max} mg/L)` },
-              { name: 'ph', label: 'pH', placeholder: `(${parameterRanges.ph.min}-${parameterRanges.ph.max})` },
-              { name: 'conductivity', label: 'Conductivity', placeholder: `(${parameterRanges.conductivity.min}-${parameterRanges.conductivity.max} µmho/cm)` },
-              { name: 'bod', label: 'BOD', placeholder: `(${parameterRanges.bod.min}-${parameterRanges.bod.max} mg/L)` },
-              { name: 'nitrate', label: 'Nitrate', placeholder: `(${parameterRanges.nitrate.min}-${parameterRanges.nitrate.max} mg/L)` },
-              { name: 'fecalColiform', label: 'Fecal Coliform', placeholder: `(${parameterRanges.fecalColiform.min}-${parameterRanges.fecalColiform.max} MPN/100ml)` },
-              { name: 'totalColiform', label: 'Total Coliform', placeholder: `(${parameterRanges.totalColiform.min}-${parameterRanges.totalColiform.max} MPN/100ml)` },
-            ].map(field => {
-              const range = (parameterRanges as any)[field.name];
-              return (
-                <div key={field.name}>
-                  <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-1">
-                    {field.label}
-                    <span className="text-gray-500 ml-2 text-xs font-normal">{field.placeholder}</span>
-                  </label>
-                  <input
-                    type="number"
-                    name={field.name}
-                    id={field.name}
-                    value={(formData as any)[field.name]}
-                    onChange={handleChange}
-                    required
-                    min={range?.min}
-                    max={range?.max}
-                    placeholder={field.placeholder.replace(/[()]/g, '')}
-                    className="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all sm:text-base"
-                    step="any"
-                  />
-                </div>
-              );
-            })}
-          </div>
+  const renderExplanation = (pred: string) => {
+    const normalized = pred.toLowerCase();
 
-          <div className="mt-10 text-center">
-            <motion.button
-              type="submit"
-              whileHover={{ scale: 1.05, boxShadow: '0 10px 15px rgba(6, 182, 212, 0.4)' }}
-              whileTap={{ scale: 0.95 }}
-              disabled={isLoading}
-              className="px-10 py-4 bg-gradient-to-r from-cyan-600 to-blue-500 text-white rounded-full font-extrabold text-lg shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Predicting...
-                </span>
-              ) : 'Predict Water Quality'}
-            </motion.button>
-          </div>
+    // RIVER: Polluted
+    if (pred === 'Polluted') {
+      return (
+        <div className="my-6 text-left">
+          <h3 className="text-xl font-semibold mb-2">What does "Polluted" mean?</h3>
+          <p className="text-gray-700 mb-4">
+            Polluted water is unsafe for drinking or food preparation. It may contain high levels of harmful
+            chemicals, biological contaminants (bacteria, viruses), or toxic substances which can cause
+            immediate illness or long-term health problems.
+          </p>
 
-          {prediction && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-10 p-6 bg-blue-50 border-2 border-blue-400 text-blue-800 rounded-xl shadow-lg"
-            >
-              <h3 className="text-xl font-bold mb-1">Prediction Result:</h3>
-              <p className="text-2xl font-extrabold">{prediction}</p>
-              <p className="text-sm text-gray-600 mt-2">(Simulated result. Connect to a real ML model for accurate server explanations.)</p>
-            </motion.div>
-          )}
+          <h3 className="text-xl font-semibold mb-2">Health Risks</h3>
+          <ul className="list-inside list-disc text-gray-700 mb-4">
+            <li>Gastrointestinal infections (diarrhea, vomiting).</li>
+            <li>Skin and eye infections on contact.</li>
+            <li>Long-term exposure can affect organs and development.</li>
+          </ul>
 
-          {/* FIX: Error block for validation errors */}
-          {error && (
-            <div className="mt-4 p-4 whitespace-pre-wrap bg-red-100 border-2 border-red-500 text-red-800 rounded-xl font-medium shadow-md">
-                <h4 className="font-extrabold mb-1">Validation Error:</h4>
-                <p className="text-sm">{error}</p>
-            </div>
-          )}
-        </form>
-      </motion.div>
-    </div>
-  );
+          <h3 className="text-xl font-semibold mb-2">Recommendations</h3>
+          <div className="bg-red-50 p-4 rounded-md border border-red-200">
+            <ul className="list-inside list-disc text-gray-700">
+              <li>Do not drink this water without strong treatment (RO + UV / boiling + filtering).</li>
+              <li>Avoid using this water for cooking or feeding infants.</li>
+              <li>Report serious contamination to local authorities if this is a public source.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    // RIVER: Moderate
+    if (pred === 'Moderate') {
+      return (
+        <div className="my-6 text-left">
+          <h3 className="text-xl font-semibold mb-2">What does "Moderate" mean?</h3>
+          <p className="text-gray-700 mb-4">
+            Moderate water quality means the water is not extremely polluted but may not meet ideal drinking
+            standards, especially for sensitive people (kids, elderly, pregnant women).
+          </p>
+
+          <h3 className="text-xl font-semibold mb-2">Health Notes</h3>
+          <ul className="list-inside list-disc text-gray-700 mb-4">
+            <li>May be usable for washing and cleaning.</li>
+            <li>For drinking, basic treatment (filtration + boiling) is recommended.</li>
+          </ul>
+
+          <h3 className="text-xl font-semibold mb-2">Recommendations</h3>
+          <div className="bg-yellow-50 p-4 rounded-md border border-yellow-200">
+            <ul className="list-inside list-disc text-gray-700">
+              <li>Use household filters or boil water before drinking.</li>
+              <li>Monitor taste/smell and avoid if something feels off.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    // TAP: Low
+    if (normalized === 'low') {
+      return (
+        <div className="my-6 text-left">
+          <h3 className="text-xl font-semibold mb-2">Tap Quality: Low Risk</h3>
+          <p className="text-gray-700 mb-4">
+            Your tap water is in the <strong>Low</strong> risk zone based on pH, Hardness, Chloramines,
+            Sulfate, and Turbidity. Overall, parameters look within safer ranges.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-2">What this means</h3>
+          <ul className="list-inside list-disc text-gray-700 mb-4">
+            <li>Suitable for regular household use and drinking (with normal filtration).</li>
+            <li>Less chances of irritation, strange taste, or visible impurities.</li>
+          </ul>
+
+          <h3 className="text-xl font-semibold mb-2">Tips</h3>
+          <div className="bg-emerald-50 p-4 rounded-md border border-emerald-200">
+            <ul className="list-inside list-disc text-gray-700">
+              <li>Use a basic filter for better taste and extra safety.</li>
+              <li>Clean your filter regularly to maintain good quality.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    // TAP: Average
+    if (normalized === 'average') {
+      return (
+        <div className="my-6 text-left">
+          <h3 className="text-xl font-semibold mb-2">Tap Quality: Average</h3>
+          <p className="text-gray-700 mb-4">
+            Your tap water is in the <strong>Average</strong> zone. Most parameters are around the typical
+            range, but some might be slightly higher or lower than ideal.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-2">What this means</h3>
+          <ul className="list-inside list-disc text-gray-700 mb-4">
+            <li>Generally usable for bathing, cleaning and sometimes drinking.</li>
+            <li>For long-term daily drinking, a good quality filter/RO is recommended.</li>
+          </ul>
+
+          <h3 className="text-xl font-semibold mb-2">Tips</h3>
+          <div className="bg-amber-50 p-4 rounded-md border border-amber-200">
+            <ul className="list-inside list-disc text-gray-700">
+              <li>Use RO/UV filter if possible, especially for children and elderly.</li>
+              <li>Check for unusual smell, color, or taste time to time.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    // TAP: High
+    if (normalized === 'high') {
+      return (
+        <div className="my-6 text-left">
+          <h3 className="text-xl font-semibold mb-2">Tap Quality: High Risk</h3>
+          <p className="text-gray-700 mb-4">
+            One or more tap water parameters are in the <strong>High</strong> zone (for example excessive
+            hardness, turbidity, or chemicals). This can affect taste, pipes, and long-term health.
+          </p>
+
+          <h3 className="text-xl font-semibold mb-2">Possible Issues</h3>
+          <ul className="list-inside list-disc text-gray-700 mb-4">
+            <li>Scaling in utensils, geysers and pipes due to high hardness.</li>
+            <li>Cloudy/colored water due to higher turbidity or contaminants.</li>
+            <li>Long-term excess chemicals may stress kidneys or cause other health issues.</li>
+          </ul>
+
+          <h3 className="text-xl font-semibold mb-2">Recommendations</h3>
+          <div className="bg-red-50 p-4 rounded-md border border-red-200">
+            <ul className="list-inside list-disc text-gray-700">
+              <li>Use advanced treatment (RO + UV) for drinking.</li>
+              <li>Avoid giving this water directly to infants or people with kidney issues.</li>
+              <li>Consider periodic lab testing if you suspect serious contamination.</li>
+            </ul>
+          </div>
+        </div>
+      );
+    }
+
+    // fallback
+    return (
+      <div className="my-6 text-left">
+        <h3 className="text-xl font-semibold mb-2">Prediction result</h3>
+        <p className="text-gray-700">
+          Model returned: <strong>{pred}</strong>
+        </p>
+      </div>
+    );
+  };
+
+  // ---------------- Result Screen ----------------
+
+  if (prediction) {
+    const normalized = prediction.toLowerCase();
+
+    let title = prediction;
+    let headerBg = 'bg-gray-100';
+    let badgeBg = 'bg-gray-900';
+    const badgeText = 'text-white';
+
+    if (prediction === 'Polluted') {
+      title = 'Polluted River Water';
+      headerBg = 'bg-red-50';
+      badgeBg = 'bg-red-600';
+    } else if (prediction === 'Moderate') {
+      title = 'Moderate River Water';
+      headerBg = 'bg-amber-50';
+      badgeBg = 'bg-amber-600';
+    } else if (normalized === 'low') {
+      title = 'Tap Water – Low Risk';
+      headerBg = 'bg-emerald-50';
+      badgeBg = 'bg-emerald-600';
+    } else if (normalized === 'average') {
+      title = 'Tap Water – Average Quality';
+      headerBg = 'bg-amber-50';
+      badgeBg = 'bg-amber-600';
+    } else if (normalized === 'high') {
+      title = 'Tap Water – High Risk';
+      headerBg = 'bg-red-50';
+      badgeBg = 'bg-red-600';
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-50 py-12 px-4">
+        <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+          <h1 className="text-center text-3xl font-extrabold mb-6 text-gray-900">{title}</h1>
+
+          <div className={`${headerBg} rounded-2xl p-5 text-center mb-4`}>
+            <span
+              className={`inline-flex px-5 py-2 font-semibold rounded-full shadow-sm ${badgeBg} ${badgeText}`}
+            >
+              {prediction}
+            </span>
+            <p className="mt-3 text-sm text-gray-600">
+              This result is generated using your selected parameters and our trained water quality model.
+            </p>
+          </div>
+
+          {renderExplanation(prediction)}
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={resetAll}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-8 rounded-full font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-700"
+            >
+              <span>⟲</span>
+              <span>Go Back & Predict Again</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ---------------- Main Screen (cards + forms) ----------------
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-emerald-50 py-12">
+      <div className="max-w-6xl mx-auto px-4">
+        <h2 className="text-4xl md:text-5xl font-extrabold text-center text-gray-900 mb-4">
+          Water Quality <span className="text-teal-500">Analyzer</span>
+        </h2>
+
+        <p className="text-center text-gray-600 mb-8">
+          Choose a card below — measure river values or set tap options and predict.
+        </p>
+
+        {!showForm ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* River card */}
+            <div className="relative bg-white rounded-3xl shadow-xl p-6 border-2 border-cyan-200 overflow-hidden">
+              <div className="absolute top-0 right-0 w-28 h-28 bg-white/80 rounded-bl-3xl transform translate-x-6 -translate-y-6 pointer-events-none" />
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-50 to-blue-100">
+                  <svg
+                    className="w-8 h-8 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12s4-8 9-8 9 8 9 8-4 8-9 8-9-8-9-8z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">River Water</h3>
+                  <p className="text-sm text-gray-500">
+                    Predict ecological status and pollution level of natural water bodies.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWaterType('river');
+                    setShowForm(true);
+                  }}
+                  className="inline-flex items-center gap-3 py-3 px-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold shadow-2xl hover:from-blue-600 hover:to-blue-700"
+                >
+                  Start River Prediction
+                </button>
+              </div>
+            </div>
+
+            {/* Tap card */}
+            <div className="relative bg-white rounded-3xl shadow-xl p-6 border-2 border-sky-200 overflow-hidden">
+              <div className="absolute top-0 right-0 w-24 h-24 bg-white/80 rounded-bl-3xl transform translate-x-6 -translate-y-6 pointer-events-none" />
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-emerald-50 to-emerald-100">
+                  <svg
+                    className="w-8 h-8 text-emerald-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v4m0 10v4m9-9h-4M7 12H3" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">Tap Water</h3>
+                  <p className="text-sm text-gray-500">
+                    Evaluate potability and safety of household drinking water.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWaterType('tap');
+                    setShowForm(true);
+                  }}
+                  className="inline-flex items-center gap-3 py-3 px-8 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white font-semibold shadow-2xl hover:from-indigo-700 hover:to-indigo-600"
+                >
+                  Start Tap Prediction
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-3xl shadow-xl p-6 border border-gray-100">
+            {/* Top bar with title + Back + Reset */}
+            <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  {waterType === 'river' ? 'River Water Input' : 'Tap Water Options'}
+                  <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                    {waterType === 'river' ? 'Detailed parameters' : 'Quick Low / Avg / High'}
+                  </span>
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  {waterType === 'river'
+                    ? 'Fill in measured values from your test results to get a more scientific prediction.'
+                    : 'Select how your tap water feels for each parameter. We convert it to numeric ranges internally.'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 bg-gray-50 hover:bg-gray-100"
+                >
+                  <span>←</span>
+                  <span>Back</span>
+                </button>
+                <button
+                  onClick={resetAll}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-200 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100"
+                >
+                  <span>⟲</span>
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
+
+            {waterType === 'river' ? (
+              <form onSubmit={handleRiverSubmit}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { name: 'temperature', placeholder: 'Temperature (°C)', hint: 'Typical: 20–30 °C' },
+                    {
+                      name: 'dissolvedOxygen',
+                      placeholder: 'Dissolved Oxygen (mg/L)',
+                      hint: 'Higher is usually better',
+                    },
+                    { name: 'ph', placeholder: 'pH (0-14)', hint: 'Ideal near 7' },
+                    {
+                      name: 'conductivity',
+                      placeholder: 'Conductivity (µmho/cm)',
+                      hint: 'Related to salt/mineral content',
+                    },
+                    { name: 'bod', placeholder: 'BOD (mg/L)', hint: 'High BOD → more organic pollution' },
+                    { name: 'nitrate', placeholder: 'Nitrate N (mg/L)', hint: 'High nitrate is harmful' },
+                    {
+                      name: 'fecalColiform',
+                      placeholder: 'Fecal Coliform (MPN/100ml)',
+                      hint: 'Indicates sewage contamination',
+                    },
+                    {
+                      name: 'totalColiform',
+                      placeholder: 'Total Coliform (MPN/100ml)',
+                      hint: 'General microbial contamination',
+                    },
+                  ].map(field => (
+                    <div key={field.name} className="p-3 rounded-xl border border-gray-100 bg-gray-50/40">
+                      <label
+                        htmlFor={field.name}
+                        className="block text-sm font-medium text-gray-700 capitalize"
+                      >
+                        {field.placeholder}
+                      </label>
+                      <input
+                        type="number"
+                        name={field.name}
+                        id={field.name}
+                        value={formData[field.name as keyof FormState]}
+                        onChange={handleChange}
+                        required
+                        className="mt-1 block w-full px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:border-blue-300 sm:text-sm"
+                        placeholder={field.placeholder}
+                        step="any"
+                      />
+                      <p className="mt-1 text-xs text-gray-400">{field.hint}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-8 flex items-center justify-center">
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-3 py-3 px-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 text-white font-semibold shadow-2xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-60"
+                  >
+                    {isLoading ? 'Predicting...' : 'Predict River Quality'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tapParams.map(p => (
+                    <div
+                      key={p.name}
+                      className="p-4 border border-gray-100 rounded-xl bg-slate-50 hover:bg-slate-100 transition"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h4 className="font-semibold text-gray-800">{p.name}</h4>
+                          <span className="text-xs text-gray-500">{p.description}</span>
+                        </div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-500">
+                          Selected: {p.value}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2 mt-2">
+                        {(['Low', 'Average', 'High'] as ('Low' | 'Average' | 'High')[]).map(opt => (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => handleTapParamChange(p.name, opt)}
+                            className={`flex-1 py-2 rounded-md text-sm font-medium border transition ${
+                              p.value === opt
+                                ? 'bg-indigo-50 border-indigo-300 text-indigo-700 shadow-sm'
+                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex flex-col items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleTapSubmit}
+                    disabled={isLoading}
+                    className="inline-flex items-center gap-3 py-3 px-10 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-500 text-white font-semibold shadow-2xl hover:from-indigo-700 hover:to-indigo-600 disabled:opacity-60"
+                  >
+                    {isLoading ? 'Predicting...' : 'Predict Tap Quality'}
+                  </button>
+
+                  <p className="text-xs text-gray-500 text-center max-w-md">
+                    Your Low / Average / High selections are converted into numeric ranges for each parameter and
+                    passed to the tap water model for prediction.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {error && <div className="mt-6 text-center text-red-600 font-medium">{error}</div>}
+      </div>
+    </div>
+  );
 };
+
 export default Prediction;
