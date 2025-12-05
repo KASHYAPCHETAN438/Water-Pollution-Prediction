@@ -5,7 +5,7 @@ import os
 import traceback
 import sys
 from extensions import db
-import pandas as pd  # <-- NEW: for DataFrame for tap water model
+import pandas as pd  # for DataFrame inputs (main + tap models)
 
 prediction_bp = Blueprint('prediction_bp', __name__)
 
@@ -15,7 +15,7 @@ prediction_bp = Blueprint('prediction_bp', __name__)
 try:
     model_path = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'best_water_model.pkl')
     le_path = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'label_encoder.pkl')
-    
+
     model = joblib.load(model_path)
     le = joblib.load(le_path)
     print(" Loaded pre-trained model and label encoder successfully")
@@ -39,12 +39,61 @@ except Exception as e:
     tap_model = None
 
 
+# ------------------------------------------------------------
+# HELPER: build input DataFrame for main (8-feature) model
+#       -> uses SAME column names as training DataFrame
+# ------------------------------------------------------------
+def build_main_model_df(d):
+    """
+    Convert JSON body from frontend into a pandas DataFrame with
+    the same feature names that were used when fitting the model.
+    """
+
+    required_fields = [
+        "temperature", "dissolvedOxygen", "ph", "conductivity",
+        "bod", "nitrate", "fecalColiform", "totalColiform"
+    ]
+    missing = [f for f in required_fields if d.get(f) is None]
+    if missing:
+        raise ValueError(f"Missing required fields: {', '.join(missing)}")
+
+    # Values order = joh tum frontend se bhej rahe ho
+    try:
+        values = [
+            float(d.get("temperature")),
+            float(d.get("dissolvedOxygen")),
+            float(d.get("ph")),
+            float(d.get("conductivity")),
+            float(d.get("bod")),
+            float(d.get("nitrate")),
+            float(d.get("fecalColiform")),
+            float(d.get("totalColiform")),
+        ]
+    except Exception as e:
+        raise ValueError(f"Invalid numeric value in input: {e}")
+
+    # Model ko jis naam ke features ke saath train kiya gaya tha,
+    # wo sklearn model ke andar feature_names_in_ me saved rehte hain.
+    default_cols = [
+        "Temperature", "Dissolved Oxygen", "pH", "Conductivity",
+        "BOD", "Nitrate", "Fecal Coliform", "Total Coliform"
+    ]
+    feature_names = list(getattr(model, "feature_names_in_", default_cols))
+
+    if len(feature_names) != len(values):
+        raise ValueError(
+            f"Model expects {len(feature_names)} features but received {len(values)}."
+        )
+
+    sample = {feature_names[i]: values[i] for i in range(len(feature_names))}
+
+    df = pd.DataFrame([sample])
+    return df
+
+
 # Routes
 # --------------------------------------------------------------------
 
-# --------------------------------------------------------------------
-#  4) Diagnostics route — check model loading status
-# --------------------------------------------------------------------
 @prediction_bp.route('/diagnostics', methods=['GET'])
 def diagnostics():
     """Return diagnostic information about the model setup."""
@@ -58,6 +107,12 @@ def diagnostics():
     else:
         tap_status = "ok"
 
+    default_cols = [
+        "Temperature", "Dissolved Oxygen", "pH", "Conductivity",
+        "BOD", "Nitrate", "Fecal Coliform", "Total Coliform"
+    ]
+    main_features = list(getattr(model, "feature_names_in_", default_cols)) if model else None
+
     info = {
         "python_version": sys.version,
         "main_model_status": main_model_status,
@@ -65,10 +120,7 @@ def diagnostics():
         "model_type": type(model).__name__ if model else None,
         "model_path": model_path if model else None,
         "tap_model_path": tap_model_path if tap_model else None,
-        "features_main_model": [
-            "Temperature", "Dissolved Oxygen", "pH", "Conductivity",
-            "BOD", "Nitrate", "Fecal Coliform", "Total Coliform"
-        ],
+        "features_main_model": main_features,
         "tap_features": [
             "ph", "Hardness", "Chloramines", "Sulfate", "Turbidity"
         ],
@@ -94,135 +146,81 @@ def predict():
         }), 500
     try:
         data = request.get_json(force=True)
-        print("📥 Received data:", data)
+        print("📥 /predict Received data:", data)
 
-        # validate and build input array
-        def build_input_array(d):
-            required_fields = [
-                "temperature", "dissolvedOxygen", "ph", "conductivity",
-                "bod", "nitrate", "fecalColiform", "totalColiform"
-            ]
-            missing = [f for f in required_fields if d.get(f) is None]
-            if missing:
-                raise ValueError(f"Missing required fields: {', '.join(missing)}")
+        input_df = build_main_model_df(data)
+        print(" /predict Processed input DF:")
+        print(input_df)
 
-            try:
-                arr = np.array([[
-                    float(d.get("temperature")),
-                    float(d.get("dissolvedOxygen")),
-                    float(d.get("ph")),
-                    float(d.get("conductivity")),
-                    float(d.get("bod")),
-                    float(d.get("nitrate")),
-                    float(d.get("fecalColiform")),
-                    float(d.get("totalColiform"))
-                ]])
-            except Exception as e:
-                raise ValueError(f"Invalid numeric value in input: {e}")
-            return arr
-
-        input_data = build_input_array(data)
-        print(" Processed input data:", input_data)
-
-        pred_label = model.predict(input_data)
+        pred_label = model.predict(input_df)
         prediction = le.inverse_transform(pred_label)[0]
-        print(" Prediction result:", prediction)
+        print(" /predict Prediction result:", prediction)
 
         return jsonify({
             "success": True,
             "prediction": prediction
         })
     except ValueError as ve:
-        print(" Validation error:", str(ve))
+        print(" /predict Validation error:", str(ve))
         return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         traceback.print_exc()
-        print(" Error during prediction:", str(e))
+        print(" /predict Error during prediction:", str(e))
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
-# --------------------------------------------------------------------
-# Old endpoints: /tap and /river — same 8-feature model reuse
-# --------------------------------------------------------------------
 @prediction_bp.route('/tap', methods=['POST'])
 def predict_tap():
+    """Tap endpoint but using main 8-feature model (not tap_water.pkl)."""
     if model is None or le is None:
         return jsonify({"success": False, "error": "Model not loaded properly."}), 500
 
     try:
         data = request.get_json(force=True)
-        def build_input_array(d):
-            required_fields = [
-                "temperature", "dissolvedOxygen", "ph", "conductivity",
-                "bod", "nitrate", "fecalColiform", "totalColiform"
-            ]
-            missing = [f for f in required_fields if d.get(f) is None]
-            if missing:
-                raise ValueError(f"Missing required fields: {', '.join(missing)}")
-            try:
-                arr = np.array([[
-                    float(d.get("temperature")),
-                    float(d.get("dissolvedOxygen")),
-                    float(d.get("ph")),
-                    float(d.get("conductivity")),
-                    float(d.get("bod")),
-                    float(d.get("nitrate")),
-                    float(d.get("fecalColiform")),
-                    float(d.get("totalColiform"))
-                ]])
-            except Exception as e:
-                raise ValueError(f"Invalid numeric value in input: {e}")
-            return arr
+        print("📥 /tap Received data:", data)
 
-        input_data = build_input_array(data)
-        pred_label = model.predict(input_data)
+        input_df = build_main_model_df(data)
+        print(" /tap Processed input DF:")
+        print(input_df)
+
+        pred_label = model.predict(input_df)
         prediction = le.inverse_transform(pred_label)[0]
+        print(" /tap Prediction result:", prediction)
+
         return jsonify({"success": True, "prediction": prediction})
     except ValueError as ve:
+        print(" /tap Validation error:", str(ve))
         return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         traceback.print_exc()
+        print(" /tap Error during prediction:", str(e))
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
 @prediction_bp.route('/river', methods=['POST'])
 def predict_river():
-    # same as predict_tap (8-feature model)
+    """River endpoint using main 8-feature model."""
     if model is None or le is None:
         return jsonify({"success": False, "error": "Model not loaded properly."}), 500
     try:
         data = request.get_json(force=True)
-        def build_input_array(d):
-            required_fields = [
-                "temperature", "dissolvedOxygen", "ph", "conductivity",
-                "bod", "nitrate", "fecalColiform", "totalColiform"
-            ]
-            missing = [f for f in required_fields if d.get(f) is None]
-            if missing:
-                raise ValueError(f"Missing required fields: {', '.join(missing)}")
-            try:
-                arr = np.array([[
-                    float(d.get("temperature")),
-                    float(d.get("dissolvedOxygen")),
-                    float(d.get("ph")),
-                    float(d.get("conductivity")),
-                    float(d.get("bod")),
-                    float(d.get("nitrate")),
-                    float(d.get("fecalColiform")),
-                    float(d.get("totalColiform"))
-                ]])
-            except Exception as e:
-                raise ValueError(f"Invalid numeric value in input: {e}")
-            return arr
+        print("📥 /river Received data:", data)
 
-        input_data = build_input_array(data)
-        pred_label = model.predict(input_data)
+        input_df = build_main_model_df(data)
+        print(" River input DF:")
+        print(input_df)
+
+        pred_label = model.predict(input_df)
         prediction = le.inverse_transform(pred_label)[0]
+        print(" /river Prediction result:", prediction)
+
         return jsonify({"success": True, "prediction": prediction})
     except ValueError as ve:
+        print(" River ValueError:", str(ve))
         return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         traceback.print_exc()
+        print(" /river Error during prediction:", str(e))
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -252,7 +250,7 @@ def predict_tap_status():
 
     try:
         data = request.get_json(force=True)
-        print("📥 Received tap data:", data)
+        print("📥 /tap-status Received tap data:", data)
 
         required_fields = ["ph", "Hardness", "Chloramines", "Sulfate", "Turbidity"]
         missing = [f for f in required_fields if data.get(f) is None]
@@ -269,7 +267,8 @@ def predict_tap_status():
         }
 
         X_new = pd.DataFrame([sample])
-        print(" Tap input processed:", X_new)
+        print(" Tap-status input processed:")
+        print(X_new)
 
         pred = tap_model.predict(X_new)[0]  # already "Low"/"Average"/"High"
         print(" Tap water prediction:", pred)
@@ -279,10 +278,9 @@ def predict_tap_status():
             "prediction": pred
         })
     except ValueError as ve:
-        print(" Tap validation error:", str(ve))
+        print(" Tap-status validation error:", str(ve))
         return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         traceback.print_exc()
-        print(" Error during tap prediction:", str(e))
+        print(" Error during tap-status prediction:", str(e))
         return jsonify({"success": False, "error": "Internal server error"}), 500
-
