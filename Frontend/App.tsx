@@ -11,6 +11,7 @@ import Login from './pages/Login';
 import About from './pages/About';
 import Portfolio from './pages/Portfolio';
 import Prediction from './pages/Prediction';
+import ForgotPassword from './pages/ForgotPassword';
 
 interface AuthContextType {
   token: string | null;
@@ -48,9 +49,53 @@ const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const logout = () => {
     setToken(null);
     localStorage.removeItem('token');
+    console.log('👤 User logged out');
   };
   
   const isAuthenticated = !!token;
+
+  // ========== NEW: Token Validation & Auto-Logout on Backend Down ==========
+  useEffect(() => {
+    if (!token) return;
+
+    // Check token validity every 5 minutes (300000 ms) or when tab/window comes to focus
+    const validateTokenWithBackend = async () => {
+      try {
+        const response = await fetch('/api/auth/validate-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+        });
+
+        if (!response.ok) {
+          console.log('❌ Backend says token is invalid/expired → logging out');
+          logout();
+        }
+      } catch (err) {
+        console.log('⚠️ Backend unreachable → auto logout (backend might be down)');
+        logout();
+      }
+    };
+
+    // Validate token periodically every 5 minutes
+    const tokenCheckInterval = setInterval(validateTokenWithBackend, 5 * 60 * 1000);
+
+    // Also validate when window regains focus (user switches back to tab)
+    window.addEventListener('focus', validateTokenWithBackend);
+
+    // ========== NEW: Clear Token on Tab/Browser Close ==========
+    const handleBeforeUnload = () => {
+      // Clear token from localStorage when user closes tab/browser
+      localStorage.removeItem('token');
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(tokenCheckInterval);
+      window.removeEventListener('focus', validateTokenWithBackend);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [token]);
 
   return (
     <AuthContext.Provider value={{ token, isAuthenticated, login, logout }}>
@@ -77,6 +122,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/about" element={<About />} />
               <Route 

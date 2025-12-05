@@ -15,11 +15,16 @@ def create_app():
 
 
     # Enable CORS with support for credentials and custom headers
-    CORS(app, 
+    # Allow configurable CORS origins via environment variable for development on other hosts
+    cors_origins_env = os.getenv('CORS_ORIGINS', 'http://localhost:5173')
+    # Support comma-separated list in env var
+    cors_origins = [o.strip() for o in cors_origins_env.split(',') if o.strip()]
+
+    CORS(app,
          supports_credentials=True,
          resources={
              r"/api/*": {
-                 "origins": ["http://localhost:5173"],  # Vite's default dev server port
+                 "origins": cors_origins,
                  "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
                  "allow_headers": ["Content-Type", "Authorization"],
                  "expose_headers": ["Content-Type", "Authorization"],
@@ -62,12 +67,18 @@ def create_app():
     with app.app_context():
         try:
             # Import models (after db is initialized)
+            # Import all models so SQLAlchemy can register their tables
             from models.user import User
-            
-            # Create database tables
+            try:
+                from models.otp import OTP
+            except Exception:
+                # If OTP model missing or causes import error, continue and log
+                print('⚠ Could not import OTP model before creating tables')
+
+            # Create database tables for all imported models
             db.create_all()
             
-            # Register auth blueprint
+            # Register auth blueprint (imports routes that may reference models)
             from routes.auth_route import auth_bp
             app.register_blueprint(auth_bp, url_prefix='/api/auth')
         except Exception as e:

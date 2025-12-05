@@ -33,7 +33,7 @@ const Login: React.FC = () => {
       if (!token) throw new Error('Missing token in response');
 
       login(token);
-      navigate('pridict');
+      navigate('/prediction');
 
     } catch (err) {
       setError('Invalid email or password.');
@@ -126,7 +126,7 @@ const Login: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
               >
-                <a href="#">Forgot password?</a>
+                   <a onClick={() => navigate('/forgot-password')} style={{ cursor: 'pointer' }}>Forgot password?</a>
               </motion.div>
 
               <motion.button 

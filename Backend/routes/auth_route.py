@@ -3,13 +3,39 @@ from flask_mail import Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from extensions import db, mail
 from models.user import User
-from itsdangerous import URLSafeTimedSerializer
+from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
+import time
+from models.otp import OTP
+import re
+import traceback
 
 auth_bp = Blueprint('auth_bp', __name__)
+
+# Token expiry time in seconds (1 hour = 3600 seconds)
+TOKEN_EXPIRY = 3600
 
 def make_serializer():
     secret = current_app.config.get('SECRET_KEY', None)
     return URLSafeTimedSerializer(secret) if secret else None
+
+def validate_token(token):
+    """Validate token and check expiry. Returns user_id if valid, None if invalid/expired."""
+    try:
+        serializer = make_serializer()
+        if not serializer or not token:
+            return None
+        # max_age in seconds — token expires after TOKEN_EXPIRY seconds
+        data = serializer.loads(token, max_age=TOKEN_EXPIRY)
+        return data.get('user_id')
+    except SignatureExpired:
+        print("⏰ Token expired")
+        return None
+    except BadSignature:
+        print("❌ Invalid token signature")
+        return None
+    except Exception as e:
+        print(f"❌ Token validation error: {e}")
+        return None
 
 # ---------------- Home Page ----------------
 @auth_bp.route('/')
@@ -56,16 +82,42 @@ def register():
         # --------------- Send Welcome Email ---------------
         try:
             msg = Message(
-                subject="Welcome to Our Platform!",
-                recipients=[email],
-                html=f"""
-                <h2>Welcome, {name}! 👋</h2>
-                <p>Thank you for registering on our platform.</p>
-                <p>You can now log in and start exploring all our features! 🚀</p>
-                <hr>
-                <p style="color:gray;">Best regards,<br>Your Platform Team</p>
-                """
-            )
+                      subject=f"🎉 Welcome to Our Platform, {name}! 🌱✨",
+                      recipients=[email],
+                     html=f"""
+                        <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f4f9ff; padding: 20px; border-radius: 10px;">
+        
+                        <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3a8ef6, #6f3af6); border-radius: 10px; color: white;">
+                        <h2 style="margin: 0; font-size: 28px;">Welcome Aboard, {name}! 👋</h2>
+                         <p style="margin-top: 8px; font-size: 16px;">We're thrilled to have you with us!</p>
+                         </div>
+
+                         <div style="padding: 20px; background: #ffffff; border-radius: 10px; margin-top: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
+                         <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                         Thanks for registering with us! 🌟<br><br>
+                         You now have full access to explore our water quality prediction tools 🚀
+                        </p>
+
+                        <div style="text-align: center; margin: 20px 0;">
+                        <a href="https://your-website-url/login" 
+                        style="text-decoration:none; background: #3a8ef6; color: #fff; padding: 12px 25px; border-radius: 50px; font-size: 16px; display: inline-block;">
+                       🔐 Login & Get Started
+                        </a>
+                        </div>
+
+                         <p style="font-size: 14px; color: #777;">
+                         If you have any questions or need support, feel free to reply to this email anytime 💬
+                         </p>
+                         </div>
+
+                         <div style="text-align:center; margin-top:15px; color: #888; font-size: 13px;">
+                         <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                         <p>With gratitude 💧<br><strong>Your Platform Team</strong></p>
+                         </div>
+                         </div>
+                            """
+                )
+
             mail.send(msg)
             print(f"📧 Welcome email sent to {email}")
         except Exception as e:
@@ -114,3 +166,238 @@ def login():
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('auth_bp.home'))
+
+# ========== NEW: Validate Token Endpoint ==========
+@auth_bp.route('/validate-token', methods=['POST'])
+def validate_token_endpoint():
+    """Check if token is still valid. Frontend calls this periodically."""
+    try:
+        payload = request.get_json(silent=True)
+        token = payload.get('token') if payload else None
+        
+        if not token:
+            return jsonify({'valid': False, 'message': 'No token provided'}), 401
+        
+        user_id = validate_token(token)
+        if user_id:
+            user = User.query.get(user_id)
+            if user:
+                return jsonify({'valid': True, 'user_id': user_id, 'user_name': user.name}), 200
+        
+        return jsonify({'valid': False, 'message': 'Token expired or invalid'}), 401
+    except Exception as e:
+        print(f"❌ Token validation endpoint error: {e}")
+        return jsonify({'valid': False, 'message': 'Server error'}), 500
+
+# ========== NEW: Forgot Password - Send OTP ==========
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    """Send OTP to user email for password reset."""
+    try:
+        payload = request.get_json(silent=True)
+        email = payload.get('email') if payload else request.form.get('email')
+        
+        if not email:
+            return jsonify({'success': False, 'message': 'Email is required'}), 400
+        
+        # Validate email format
+        email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(email_regex, email):
+            return jsonify({'success': False, 'message': 'Invalid email format'}), 400
+        
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # For security, don't reveal if email exists or not
+            return jsonify({'success': True, 'message': 'If email exists, OTP has been sent'}), 200
+        
+        # Delete any existing OTP for this email to avoid unique constraint issues
+        try:
+            existing = OTP.query.filter_by(email=email).first()
+            if existing:
+                db.session.delete(existing)
+                db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception('Failed to delete existing OTP')
+
+        # Generate new OTP
+        try:
+            otp_obj = OTP(email=email)
+            db.session.add(otp_obj)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.exception('Failed to create OTP object')
+            return jsonify({'success': False, 'message': 'Server error creating OTP'}), 500
+        
+        # Send OTP via email
+        try:
+            msg = Message(
+                subject="🔐 Password Reset OTP - Water Quality Analyzer",
+                recipients=[email],
+                html=f"""
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f4f9ff; padding: 20px; border-radius: 10px;">
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3a8ef6, #6f3af6); border-radius: 10px; color: white;">
+                        <h2 style="margin: 0; font-size: 28px;">Password Reset Request 🔒</h2>
+                        <p style="margin-top: 8px; font-size: 16px;">We received a request to reset your password</p>
+                    </div>
+
+                    <div style="padding: 20px; background: #ffffff; border-radius: 10px; margin-top: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
+                        <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                            Use this One-Time Password (OTP) to reset your password:<br><br>
+                        </p>
+
+                        <div style="text-align: center; margin: 20px 0;">
+                            <div style="background: #f0f7ff; padding: 20px; border-radius: 10px; border: 2px dashed #3a8ef6;">
+                                <p style="margin: 0; font-size: 32px; font-weight: bold; color: #3a8ef6; letter-spacing: 5px;">
+                                    {otp_obj.otp_code}
+                                </p>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 13px; color: #e74c3c; text-align: center;">
+                            ⏰ This OTP will expire in 10 minutes
+                        </p>
+
+                        <p style="font-size: 14px; color: #777; margin-top: 20px;">
+                            If you didn't request this, please ignore this email. Your account is safe. 🛡️
+                        </p>
+                    </div>
+
+                    <div style="text-align:center; margin-top:15px; color: #888; font-size: 13px;">
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                        <p>For security 🔒<br><strong>Water Quality Analyzer Team</strong></p>
+                    </div>
+                </div>
+                """
+            )
+            mail.send(msg)
+            print(f"📧 OTP sent to {email}")
+        except Exception as e:
+            # Don't fail the whole request if email sending isn't configured (dev environment)
+            print(f"❌ Failed to send OTP email: {str(e)}")
+            # Log OTP to console for development/testing so developer can continue flow without SMTP
+            try:
+                print(f"ℹ️ Development fallback - OTP for {email}: {otp_obj.otp_code}")
+                current_app.logger.warning(f"OTP send failed for {email}, OTP: {otp_obj.otp_code}")
+            except Exception:
+                pass
+            # Continue and return success to frontend to avoid exposing internal SMTP config
+        
+        return jsonify({'success': True, 'message': 'If email exists, OTP has been sent'}), 200
+    
+    except Exception as e:
+        # Log full traceback for debugging
+        traceback_str = traceback.format_exc()
+        current_app.logger.error(f"Forgot password exception: {str(e)}\n{traceback_str}")
+        return jsonify({'success': False, 'message': 'Server error'}), 500
+
+
+# ========== NEW: Verify OTP ==========
+@auth_bp.route('/verify-otp', methods=['POST'])
+def verify_otp():
+    """Verify OTP code sent to user email."""
+    try:
+        payload = request.get_json(silent=True)
+        email = payload.get('email') if payload else None
+        otp_code = payload.get('otp_code') if payload else None
+        
+        if not email or not otp_code:
+            return jsonify({'success': False, 'message': 'Email and OTP code are required'}), 400
+        
+        # Find OTP record
+        otp_obj = OTP.query.filter_by(email=email).first()
+        if not otp_obj:
+            return jsonify({'success': False, 'message': 'No OTP found for this email'}), 404
+        
+        # Verify OTP
+        is_valid, message = otp_obj.verify(otp_code)
+        if not is_valid:
+            return jsonify({'success': False, 'message': message}), 400
+        
+        # OTP verified
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'OTP verified successfully'}), 200
+    
+    except Exception as e:
+        print(f"❌ OTP verification error: {str(e)}")
+        return jsonify({'success': False, 'message': 'Server error'}), 500
+
+
+# ========== NEW: Reset Password ==========
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password after OTP verification."""
+    try:
+        payload = request.get_json(silent=True)
+        email = payload.get('email') if payload else None
+        otp_code = payload.get('otp_code') if payload else None
+        new_password = payload.get('new_password') if payload else None
+        confirm_password = payload.get('confirm_password') if payload else None
+        
+        if not all([email, otp_code, new_password, confirm_password]):
+            return jsonify({'success': False, 'message': 'All fields are required'}), 400
+        
+        if new_password != confirm_password:
+            return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
+        
+        if len(new_password) < 6:
+            return jsonify({'success': False, 'message': 'Password must be at least 6 characters'}), 400
+        
+        # Verify OTP is valid and verified
+        otp_obj = OTP.query.filter_by(email=email).first()
+        if not otp_obj or not otp_obj.is_verified:
+            return jsonify({'success': False, 'message': 'OTP not verified or expired'}), 400
+        
+        if otp_obj.is_expired():
+            return jsonify({'success': False, 'message': 'OTP has expired'}), 400
+        
+        # Find user and update password
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
+        
+        # Hash and update password
+        user.password = generate_password_hash(new_password)
+        
+        # Delete OTP after use
+        db.session.delete(otp_obj)
+        db.session.commit()
+        
+        # Send confirmation email
+        try:
+            msg = Message(
+                subject="✅ Password Reset Successful - Water Quality Analyzer",
+                recipients=[email],
+                html=f"""
+                <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f4f9ff; padding: 20px; border-radius: 10px;">
+                    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #27ae60, #2ecc71); border-radius: 10px; color: white;">
+                        <h2 style="margin: 0; font-size: 28px;">✅ Password Reset Successful!</h2>
+                        <p style="margin-top: 8px; font-size: 16px;">Your password has been updated</p>
+                    </div>
+
+                    <div style="padding: 20px; background: #ffffff; border-radius: 10px; margin-top: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.06);">
+                        <p style="font-size: 15px; color: #333; line-height: 1.6;">
+                            Your password has been successfully reset! 🎉<br><br>
+                            You can now log in with your new password.
+                        </p>
+                    </div>
+
+                    <div style="text-align:center; margin-top:15px; color: #888; font-size: 13px;">
+                        <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
+                        <p>Secure & Protected 🛡️<br><strong>Water Quality Analyzer Team</strong></p>
+                    </div>
+                </div>
+                """
+            )
+            mail.send(msg)
+        except Exception as e:
+            print(f"⚠️ Confirmation email failed (but password was reset): {str(e)}")
+        
+        return jsonify({'success': True, 'message': 'Password reset successfully. Please log in with your new password.'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(f"❌ Password reset error: {str(e)}")
+        return jsonify({'success': False, 'message': 'Server error'}), 500
