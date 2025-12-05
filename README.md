@@ -1,4 +1,4 @@
-# 🌊 Water Pollution Prediction Project
+# 🌊 Water Pollution Predict System
 
 **AI-Based Classification System | Low • Average • High Water Quality**
 
