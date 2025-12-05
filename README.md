@@ -14,9 +14,10 @@ This project supports environmental safety by enabling early awareness of water 
 | Member | Role | Email |
 |--------|------|-------|
 | Dr. Jyoti Tripati | Mentor | jyoti.tripathi@dseu.ac.in |
-| Ambuj Kumar Singh  | Full-Stack & ML Developer | ambujks2002@gmail.com |
-| Chetan | Data Analyst | Chetankashyap951@gmail.com |
-| Shravan | Center Manager | mandalshravan2004@gmail.com |
+| Ambuj Kumar Singh  |Frontend | ambujks2002@gmail.com |
+| Chetan | Backend & ML Developer | Chetankashyap951@gmail.com |
+| Shivam Sahu | Frontend | 26shivam10@gmail.com |
+| Shravan | Backend & ML Developer | mandalshravan2004@gmail.com |
 
 
 ---
@@ -177,6 +178,36 @@ These insights ensure the model is **reliable** & **accurate** for real usage.
 
 ---
 
+#  API Overview
+
+Short notes of **all important APIs** used in this project,  
+with **endpoint + HTTP method + purpose** 💧
+
+
+Backend: RESTful API built using Flask (Blueprints).
+
+----------------- API Endpoints (Examples) ------------------------
+
+------------------------------------------------------------------------------
+| Method | Endpoint                     | Description                          |
+|--------|------------------------------|--------------------------------------|
+| `POST` | `/auth/register`             | Register a new user                  |
+| `POST` | `/auth/login`                | Login user and get auth token        |
+| `POST` | `/auth/validate-token`       | Validate existing auth token         |
+| `GET`  | `/auth/logout`               | Logout user (clear session)          |
+| `POST` | `/auth/forgot-password`      | Send OTP for password reset          |
+| `POST` | `/auth/verify-otp`           | Verify OTP entered by user           |
+| `POST` | `/auth/reset-password`       | Reset password using verified OTP    |
+| `GET`  | `/water/diagnostics`         | Get model + feature diagnostics      |
+| `POST` | `/water/predict`             | General 8-feature water prediction   |
+| `POST` | `/water/river`               | Predict river water status           |
+| `POST` | `/water/tap`                 | Predict tap status (8-feature model) |
+| `POST` | `/water/tap-status`          | Predict tap status (5-feature model) |
+------------------------------------------------------------------------------
+
+
+---
+
 ## 🔮 Future Scope
 
 | Feature | Impact |
@@ -191,16 +222,16 @@ These insights ensure the model is **reliable** & **accurate** for real usage.
 
 
 
+
+
+
+
+
+---
 ## 📜 License
 
 This project is for **research and educational purposes only**.  
 Verify data before making public health decisions.
 
----
 
-## ⭐ Support
 
-If you find this project helpful —  
-👉 Don’t forget to **star⭐ the repository** and contribute!
-
----
