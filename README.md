@@ -5,11 +5,16 @@ The system helps identify **Low / Average / High** potability for tap water and 
 
 This project supports environmental safety by enabling early awareness of water contamination.
 
+
+
+<img width="1354" height="610" alt="image" src="https://github.com/user-attachments/assets/f45709d3-e787-400d-9a95-e5cd42a81056" />
+
+
 ---
 
 ## 👨‍💻 **Team Details**
 
-### **Team — Syntax Squad**
+### **Team — Bit Brains**
 
 | Member | Role | Email |
 |--------|------|-------|
@@ -206,8 +211,6 @@ Backend: RESTful API built using Flask (Blueprints).
 ------------------------------------------------------------------------------
 
 
----
-
 ## 🔮 Future Scope
 
 | Feature | Impact |
@@ -221,10 +224,75 @@ Backend: RESTful API built using Flask (Blueprints).
 ---
 
 
+#  Project Setup Guide
+
+This guide explains how to set up and run the **Water Pollution Predict System** backend locally using Flask.
+
+---
+
+## 🛠 Requirements
+
+Before starting, make sure you have installed:
+
+- Python 3.8+
+- pip (Python package manager)
+- Git
+- MySQL 
+
+---
+
+## 🚀 Steps to Run Backend (Local Setup)
+
+### 1️⃣ Clone the Repository
+- git clone https://github.com/KASHYAPCHETAN438/Water-Pollution-Prediction.git
+- cd water-pollution-prediction
+
+### 2️⃣ Create Virtual Environment
+- python -m venv venv
+
+### 3️⃣ Activate Virtual Environment
+- venv\Scripts\activate
+
+### 4️⃣ Install All Dependencies
+- pip install -r requirements.txt
+
+### 5️⃣ Update .env File in Project Root
+
+**🔐 Environment Configuration**
 
 
+- -------------- DB Configuration ----------
+ 
+    - DB_USERNAME=root
+    - DB_PASSWORD=yourpassword
+    - DB_NAME=sqlalchemy  (Database Name)
+    - DB_HOST=localhost
+    - DB_PORT=3306
+
+- ------------- SMTP Configuration ----------
+    - SECRET_KEY=yourSecretKeyHere
+    - MAIL_USERNAME=yourEmail@gmail.com
+    - MAIL_PASSWORD=yourEmailAppPassword
+    - MAIL_SERVER=smtp.gmail.com
+    - MAIL_PORT=587
+    - MAIL_USE_TLS=True
 
 
+### 7️⃣ Run Flask Application
+- python app.py
+
+
+## 🚀 Steps to Run Frontend (Local Setup)
+
+### 1️⃣ Go to Frontend Folder
+- Open terminal inside project folder and run:
+     - cd frontend
+
+### 2️⃣ Install Required Node Packages
+- npm install
+
+### 3️⃣ Start Frontend Server
+- npm run start
 
 
 ---
