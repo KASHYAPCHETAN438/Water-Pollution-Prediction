@@ -1,6 +1,66 @@
-# 🌊 Water Pollution Predict System
+# 🚰 **Water Pollution Predict System**
 
-**AI-Based Classification System | Low • Average • High Water Quality**
+A Machine Learning–based web application that predicts water quality for **Tap Water** and **River Water** using scientifically validated environmental parameters.  
+The system helps identify **Low / Average / High** potability for tap water and **Clean / Moderate / Polluted** status for river water.
+
+This project supports environmental safety by enabling early awareness of water contamination.
+
+---
+
+## 👨‍💻 **Team Details**
+
+### **Team — Syntax Squad**
+
+| Member | Role | Email |
+|--------|------|-------|
+| Dr. Jyoti Tripati | Mentor | jyoti.tripathi@dseu.ac.in |
+| Ambuj Kumar Singh  | Full-Stack & ML Developer | ambujks2002@gmail.com |
+| Chetan | Data Analyst | Chetankashyap951@gmail.com |
+| Shravan | Center Manager | mandalshravan2004@gmail.com |
+
+
+---
+
+## 🛠 **Tech Stack**
+
+### 🔹 Machine Learning & Data Processing
+- Python 3.x  
+- Pandas, NumPy  
+- Scikit-Learn  
+- XGBoost  
+- LabelEncoder  
+- Matplotlib
+
+### 🔹 Backend / API (optional deployment)
+- Flask / FastAPI  
+- Model Loading & Prediction Response  
+- JSON API Support  
+
+### 🔹 Frontend UI (optional deployment)
+- React.js  
+- Form-based real-time prediction input  
+- Charts for visualization  
+- Fetch API / Axios
+
+### 🔹 Database 
+- MySQL (for storing prediction logs & dataset uploads)
+
+---
+
+### 🌍 Data Sources
+| Dataset | Source | Format |
+|--------|--------|--------|
+| Tap Water | Kaggle | CSV |
+| River Water | CPCB – NWMP (India Govt.) | PDF → CSV Converted |
+
+---
+
+🎯 This system aims to make **Water Quality Assessment**
+✔ Simple  
+✔ Accurate  
+✔ Understandable to everyone
+
+> 💧 “Save Water • Save Life — Every Drop Matters!”  
 
 ---
 
@@ -98,8 +158,7 @@ Both models include:
 
 ✔ Accuracy Score  
 ✔ Precision / Recall / F1-Score  
-✔ Confusion Matrix Plot  
-✔ ROC-AUC Curve (Multi-Class)  
+✔ Confusion Matrix Plot   
 ✔ Feature Importance Graph  
 ✔ Cross-Validation Performance Graph  
 
@@ -107,18 +166,6 @@ These insights ensure the model is **reliable** & **accurate** for real usage.
 
 ---
 
-## 🛠 Tools & Technologies
-
-| Area | Tools |
-|------|------|
-| Language | Python |
-| ML Libraries | Scikit-Learn, Pandas, NumPy |
-| Visualization | Matplotlib, Seaborn |
-| Data Extraction | pdfplumber |
-| Backend (optional) | Flask / FastAPI / Spring Boot |
-| Frontend (optional) | React / Streamlit UI |
-
----
 
 ## 🎯 Key Outcomes
 
@@ -142,12 +189,7 @@ These insights ensure the model is **reliable** & **accurate** for real usage.
 
 ---
 
-## 👨‍💻 Team Information
 
-**Team Binary Builders**    
-Water Prediction System 🌱🌊
-
----
 
 ## 📜 License
 
