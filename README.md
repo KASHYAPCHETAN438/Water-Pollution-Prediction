@@ -245,7 +245,8 @@ Before starting, make sure you have installed:
 
 ### 1️⃣ Clone the Repository
 - git clone https://github.com/KASHYAPCHETAN438/Water-Pollution-Prediction.git
-- cd water-pollution-prediction
+    - cd water-pollution-prediction
+    - cd Backend
 
 ### 2️⃣ Create Virtual Environment
 - python -m venv venv
