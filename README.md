@@ -1,4 +1,4 @@
-# 🌊 Tap & River Water Quality Prediction Project
+# 🌊 Water Pollution Prediction Project
 
 **AI-Based Classification System | Low • Average • High Water Quality**
 
