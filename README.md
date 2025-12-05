@@ -1,14 +1,23 @@
-# 🚰 **Water Pollution Predict System**
+# &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; **🚰 **Water Pollution Predict System****
 
-A Machine Learning–based web application that predicts water quality for **Tap Water** and **River Water** using scientifically validated environmental parameters.  
-The system helps identify **Low / Average / High** potability for tap water and **Clean / Moderate / Polluted** status for river water.
+<br>
 
-This project supports environmental safety by enabling early awareness of water contamination.
+<br>
+
+
+
+- A Machine Learning–based web application that predicts water quality for **Tap Water** and **River Water** using scientifically validated environmental parameters.  
+- The system helps identify **Low / Average / High** potability for tap water and **Clean / Moderate / Polluted** status for river water.
+- This project supports environmental safety by enabling early awareness of water contamination.
+
+
+<br>
 
 
 
 <img width="1354" height="610" alt="image" src="https://github.com/user-attachments/assets/f45709d3-e787-400d-9a95-e5cd42a81056" />
 
+<br>
 
 ---
 
@@ -26,6 +35,7 @@ This project supports environmental safety by enabling early awareness of water 
 
 
 ---
+<br>
 
 ## 🛠 **Tech Stack**
 
@@ -51,7 +61,10 @@ This project supports environmental safety by enabling early awareness of water 
 ### 🔹 Database 
 - MySQL (for storing prediction logs & dataset uploads)
 
+<br>
+
 ---
+
 
 ### 🌍 Data Sources
 | Dataset | Source | Format |
@@ -59,14 +72,16 @@ This project supports environmental safety by enabling early awareness of water 
 | Tap Water | Kaggle | CSV |
 | River Water | CPCB – NWMP (India Govt.) | PDF → CSV Converted |
 
----
 
-🎯 This system aims to make **Water Quality Assessment**
+#### 🎯 This system aims to make **Water Quality Assessment**
 ✔ Simple  
 ✔ Accurate  
 ✔ Understandable to everyone
 
-> 💧 “Save Water • Save Life — Every Drop Matters!”  
+> 💧 **Save Water • Save Life — Every Drop Matters!**  
+
+<br>
+
 
 ---
 
@@ -90,6 +105,9 @@ This project helps in:
 - ✨ Real-time water monitoring
 - ✨ Environmental conservation
 
+<br>
+
+
 ---
 
 ## 📂 Dataset Information
@@ -111,6 +129,9 @@ This project helps in:
 | Turbidity | Water clarity |
 
 Used for **classification model training & evaluation**.
+
+<br>
+
 
 ---
 
@@ -141,6 +162,9 @@ Used for:
 - 📉 Trend forecasting
 - 🔬 Real-world model validation
 
+<br>
+
+
 ---
 
 ## 🤖 Machine Learning Workflow
@@ -156,6 +180,9 @@ Used for:
 | 7️⃣ | Evaluation via multiple metrics |
 | 8️⃣ | Save trained models (`tap_water.pkl` + `river_water.pkl`) |
 
+<br>
+
+
 ---
 
 ## 📊 Model Evaluation & Insights
@@ -170,6 +197,9 @@ Both models include:
 
 These insights ensure the model is **reliable** & **accurate** for real usage.
 
+<br>
+
+
 ---
 
 
@@ -180,6 +210,9 @@ These insights ensure the model is **reliable** & **accurate** for real usage.
 - 🚦 Simple traffic-light style water status for normal users
 - 🧪 Tested with real-world datasets
 - 🇮🇳 Built for Indian environmental monitoring needs
+
+<br>
+
 
 ---
 
@@ -211,17 +244,10 @@ Backend: RESTful API built using Flask (Blueprints).
 ------------------------------------------------------------------------------
 
 
-## 🔮 Future Scope
+<br>
 
-| Feature | Impact |
-|--------|--------|
-| IoT Sensor Live Monitoring | Real-time water status |
-| Google Maps Pollution Heatmap | Region-wise alerting |
-| More CPCB datasets | Broader national coverage |
-| Mobile App + Voice Support | User-friendly accessibility |
-| Explainability via SHAP | Scientific transparency |
 
----
+
 
 
 #  Project Setup Guide
@@ -294,6 +320,26 @@ Before starting, make sure you have installed:
 
 ### 3️⃣ Start Frontend Server
 - npm run start
+
+
+<br>
+
+---
+
+
+## 🔮 Future Scope
+
+| Feature | Impact |
+|--------|--------|
+| IoT Sensor Live Monitoring | Real-time water status |
+| Google Maps Pollution Heatmap | Region-wise alerting |
+| More CPCB datasets | Broader national coverage |
+| Mobile App + Voice Support | User-friendly accessibility |
+| Explainability via SHAP | Scientific transparency |
+
+
+<br>
+
 
 
 ---
