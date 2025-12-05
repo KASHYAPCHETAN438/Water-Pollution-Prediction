@@ -18,9 +18,9 @@ try:
     
     model = joblib.load(model_path)
     le = joblib.load(le_path)
-    print("✅ Loaded pre-trained model and label encoder successfully")
+    print(" Loaded pre-trained model and label encoder successfully")
 except Exception as e:
-    print(f"❌ Error loading old model: {str(e)}")
+    print(f" Error loading old model: {str(e)}")
     print("Model path:", model_path)
     print("Label encoder path:", le_path)
     model = None
@@ -32,9 +32,9 @@ except Exception as e:
 try:
     tap_model_path = os.path.join(os.path.dirname(__file__), '..', 'ml_models', 'tap_water.pkl')
     tap_model = joblib.load(tap_model_path)
-    print("✅ Loaded tap water model successfully")
+    print(" Loaded tap water model successfully")
 except Exception as e:
-    print(f"❌ Error loading tap water model: {str(e)}")
+    print(f" Error loading tap water model: {str(e)}")
     print("Tap model path:", tap_model_path)
     tap_model = None
 
@@ -43,7 +43,7 @@ except Exception as e:
 # --------------------------------------------------------------------
 
 # --------------------------------------------------------------------
-# ✅ 4) Diagnostics route — check model loading status
+#  4) Diagnostics route — check model loading status
 # --------------------------------------------------------------------
 @prediction_bp.route('/diagnostics', methods=['GET'])
 def diagnostics():
@@ -122,22 +122,22 @@ def predict():
             return arr
 
         input_data = build_input_array(data)
-        print("✅ Processed input data:", input_data)
+        print(" Processed input data:", input_data)
 
         pred_label = model.predict(input_data)
         prediction = le.inverse_transform(pred_label)[0]
-        print("✨ Prediction result:", prediction)
+        print(" Prediction result:", prediction)
 
         return jsonify({
             "success": True,
             "prediction": prediction
         })
     except ValueError as ve:
-        print("❌ Validation error:", str(ve))
+        print(" Validation error:", str(ve))
         return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         traceback.print_exc()
-        print("❌ Error during prediction:", str(e))
+        print(" Error during prediction:", str(e))
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
 
@@ -269,20 +269,20 @@ def predict_tap_status():
         }
 
         X_new = pd.DataFrame([sample])
-        print("✅ Tap input processed:", X_new)
+        print(" Tap input processed:", X_new)
 
         pred = tap_model.predict(X_new)[0]  # already "Low"/"Average"/"High"
-        print("✨ Tap water prediction:", pred)
+        print(" Tap water prediction:", pred)
 
         return jsonify({
             "success": True,
             "prediction": pred
         })
     except ValueError as ve:
-        print("❌ Tap validation error:", str(ve))
+        print(" Tap validation error:", str(ve))
         return jsonify({"success": False, "error": str(ve)}), 400
     except Exception as e:
         traceback.print_exc()
-        print("❌ Error during tap prediction:", str(e))
+        print(" Error during tap prediction:", str(e))
         return jsonify({"success": False, "error": "Internal server error"}), 500
 
