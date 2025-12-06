@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import '../styles/auth.css';
+// import '../styles/auth.css';
 
 const Signup: React.FC = () => {
   const [name, setName] = useState('');
