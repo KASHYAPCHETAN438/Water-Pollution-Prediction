@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import '../styles/auth.css';
+import API_BASE_URL from "../utils/api";
 
 const Signup: React.FC = () => {
   const [name, setName] = useState('');
@@ -17,7 +18,7 @@ const Signup: React.FC = () => {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

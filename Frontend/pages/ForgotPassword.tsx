@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import API_BASE_URL from "../utils/api";
 
 interface ForgotPasswordPageProps {}
 
@@ -43,7 +44,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('api/auth/forgot-password', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -79,7 +80,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('api/auth/verify-otp', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp_code: otp }),
@@ -124,7 +125,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
 
     setLoading(true);
     try {
-      const response = await fetch('api/auth/reset-password', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -161,7 +162,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('api/auth/forgot-password', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -178,6 +179,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
       }
     } catch (error) {
       setErrorMessage('Error resending OTP. Please try again.');
+      console.error('Resend OTP error:', error);
     } finally {
       setLoading(false);
     }
@@ -281,7 +283,9 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
                 type="text"
                 maxLength={6}
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) =>
+                  setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
+                }
                 placeholder="000000"
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition text-center text-2xl tracking-widest font-mono"
                 disabled={loading}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { motion } from "framer-motion";
 import '../styles/auth.css';
+import API_BASE_URL from "../utils/api";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -16,14 +17,15 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      // Real API call to backend (proxied by Vite during development)
-      const response = await fetch('/api/auth/login', {
+      // Real API call to backend
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
+
       if (!response.ok || !data.success) {
         throw new Error(data.message || 'Login failed');
       }
@@ -32,12 +34,15 @@ const Login: React.FC = () => {
       const { token } = data;
       if (!token) throw new Error('Missing token in response');
 
+      // Save token in auth context (and localStorage via AuthProvider)
       login(token);
+
+      // Redirect to prediction page
       navigate('/prediction');
 
     } catch (err) {
-      setError('Invalid email or password.');
       console.error(err);
+      setError('Invalid email or password.');
     }
   };
 
@@ -126,7 +131,12 @@ const Login: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
               >
-                   <a onClick={() => navigate('/forgot-password')} style={{ cursor: 'pointer' }}>Forgot password?</a>
+                <a
+                  onClick={() => navigate('/forgot-password')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  Forgot password?
+                </a>
               </motion.div>
 
               <motion.button 
@@ -140,30 +150,6 @@ const Login: React.FC = () => {
               >
                 Login
               </motion.button>
-
-              {/* <motion.div 
-                className="social-section"
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.9 }}
-              >
-                <p className="social-text">or login with social platforms</p>
-                <div className="social-icons">
-                  {['google', 'facebook', 'github', 'linkedin'].map((platform, index) => (
-                    <motion.a 
-                      key={platform}
-                      whileHover={{ scale: 1.1 }} 
-                      href="#" 
-                      className="social-icon"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: 1 + index * 0.1 }}
-                    >
-                      <i className={`bx bxl-${platform}`}></i>
-                    </motion.a>
-                  ))}
-                </div>
-              </motion.div> */}
             </motion.form>
           </div>
         </motion.div>
