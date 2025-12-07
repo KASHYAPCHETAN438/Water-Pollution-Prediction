@@ -18,6 +18,7 @@
 <img width="1354" height="610" alt="image" src="https://github.com/user-attachments/assets/f45709d3-e787-400d-9a95-e5cd42a81056" />
 
 <br>
+<br>
 
 ---
 
@@ -345,10 +346,21 @@ Before starting, make sure you have installed:
 
 
 ---
-## 📜 License
+## 🌐 Live Demo is Now Live! 🚀  
 
-This project is for **research and educational purposes only**.  
-Verify data before making public health decisions.
+Experience the **Water Pollution Prediction System** in action:  
+
+👉 **Visit Now:**  
+🔗 https://water-pollution-prediction.onrender.com  
+
+✨ What you can do on the live site:  
+- 💧 Predict **Tap Water** & **River Water** quality  
+- 📊 View **pollution levels** as Low / Average / High  
+- 📉 Explore **ML-powered** predictions with a clean UI  
+- 📱 Fully responsive – works on mobile & desktop  
+
+
+
 
 
 
