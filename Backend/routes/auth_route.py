@@ -9,14 +9,21 @@ from models.otp import OTP
 import re
 import traceback
 
+# NEW: for smtp-test debug route
+import smtplib
+import socket
+import os
+
 auth_bp = Blueprint('auth_bp', __name__)
 
 # Token expiry time in seconds (1 hour = 3600 seconds)
 TOKEN_EXPIRY = 3600
 
+
 def make_serializer():
     secret = current_app.config.get('SECRET_KEY', None)
     return URLSafeTimedSerializer(secret) if secret else None
+
 
 def validate_token(token):
     """Validate token and check expiry. Returns user_id if valid, None if invalid/expired."""
@@ -37,6 +44,39 @@ def validate_token(token):
         print(f"❌ Token validation error: {e}")
         return None
 
+
+# ========== SMTP TEST ROUTE (for Render debugging) ==========
+@auth_bp.route('/smtp-test', methods=['GET'])
+def smtp_test():
+    """
+    Simple endpoint to test SMTP connectivity + login from Render.
+    HIT: GET /api/auth/smtp-test
+    """
+    email = os.getenv("MAIL_USERNAME")
+    password = os.getenv("MAIL_PASSWORD")
+
+    try:
+        current_app.logger.info("SMTP TEST: connecting to smtp.gmail.com:587")
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)  # 10-second timeout
+        server.ehlo()
+        server.starttls()
+        server.ehlo()
+
+        current_app.logger.info("SMTP TEST: logging in as %s", email)
+        server.login(email, password)
+
+        server.quit()
+        return jsonify({"ok": True, "message": "SMTP connect + login success"}), 200
+
+    except Exception as e:
+        current_app.logger.exception("SMTP TEST ERROR")
+        return jsonify({
+            "ok": False,
+            "error": str(e),
+            "type": type(e).__name__,
+        }), 500
+
+
 # ---------------- Home Page ----------------
 @auth_bp.route('/')
 def home():
@@ -45,6 +85,7 @@ def home():
         if user:
             return f"Welcome back, {user.name}! You're already logged in."
     return render_template('auth.html')
+
 
 # ---------------- Register Route ----------------
 @auth_bp.route('/register', methods=['POST'])
@@ -82,9 +123,9 @@ def register():
         # --------------- Send Welcome Email ---------------
         try:
             msg = Message(
-                      subject=f"🎉 Welcome to Our Platform, {name}! 🌱✨",
-                      recipients=[email],
-                     html=f"""
+                subject=f"🎉 Welcome to Our Platform, {name}! 🌱✨",
+                recipients=[email],
+                html=f"""
                         <div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f4f9ff; padding: 20px; border-radius: 10px;">
         
                         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #3a8ef6, #6f3af6); border-radius: 10px; color: white;">
@@ -116,7 +157,7 @@ def register():
                          </div>
                          </div>
                             """
-                )
+            )
 
             mail.send(msg)
             print(f"📧 Welcome email sent to {email}")
@@ -126,11 +167,12 @@ def register():
             return jsonify({'success': True, 'message': 'Registration successful, but welcome email could not be sent.'}), 201
 
         return jsonify({'success': True, 'message': 'Registration successful.'}), 201
-    
+
     except Exception as e:
         db.session.rollback()
         print(f"❌ Registration error: {str(e)}")
         return "❌ An error occurred during registration. Please try again."
+
 
 # ---------------- Login Route ----------------
 @auth_bp.route('/login', methods=['POST'])
@@ -161,11 +203,13 @@ def login():
         print(f"❌ Login error: {str(e)}")
         return "❌ An error occurred during login. Please try again."
 
+
 # ---------------- Logout Route ----------------
 @auth_bp.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('auth_bp.home'))
+
 
 # ========== NEW: Validate Token Endpoint ==========
 @auth_bp.route('/validate-token', methods=['POST'])
@@ -174,20 +218,21 @@ def validate_token_endpoint():
     try:
         payload = request.get_json(silent=True)
         token = payload.get('token') if payload else None
-        
+
         if not token:
             return jsonify({'valid': False, 'message': 'No token provided'}), 401
-        
+
         user_id = validate_token(token)
         if user_id:
             user = User.query.get(user_id)
             if user:
                 return jsonify({'valid': True, 'user_id': user_id, 'user_name': user.name}), 200
-        
+
         return jsonify({'valid': False, 'message': 'Token expired or invalid'}), 401
     except Exception as e:
         print(f"❌ Token validation endpoint error: {e}")
         return jsonify({'valid': False, 'message': 'Server error'}), 500
+
 
 # ========== NEW: Forgot Password - Send OTP ==========
 @auth_bp.route('/forgot-password', methods=['POST'])
@@ -196,21 +241,21 @@ def forgot_password():
     try:
         payload = request.get_json(silent=True)
         email = payload.get('email') if payload else request.form.get('email')
-        
+
         if not email:
             return jsonify({'success': False, 'message': 'Email is required'}), 400
-        
+
         # Validate email format
         email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_regex, email):
             return jsonify({'success': False, 'message': 'Invalid email format'}), 400
-        
+
         # Check if user exists
         user = User.query.filter_by(email=email).first()
         if not user:
             # For security, don't reveal if email exists or not
             return jsonify({'success': True, 'message': 'If email exists, OTP has been sent'}), 200
-        
+
         # Delete any existing OTP for this email to avoid unique constraint issues
         try:
             existing = OTP.query.filter_by(email=email).first()
@@ -230,7 +275,7 @@ def forgot_password():
             db.session.rollback()
             current_app.logger.exception('Failed to create OTP object')
             return jsonify({'success': False, 'message': 'Server error creating OTP'}), 500
-        
+
         # Send OTP via email
         try:
             msg = Message(
@@ -284,9 +329,9 @@ def forgot_password():
             except Exception:
                 pass
             # Continue and return success to frontend to avoid exposing internal SMTP config
-        
+
         return jsonify({'success': True, 'message': 'If email exists, OTP has been sent'}), 200
-    
+
     except Exception as e:
         # Log full traceback for debugging
         traceback_str = traceback.format_exc()
@@ -302,24 +347,24 @@ def verify_otp():
         payload = request.get_json(silent=True)
         email = payload.get('email') if payload else None
         otp_code = payload.get('otp_code') if payload else None
-        
+
         if not email or not otp_code:
             return jsonify({'success': False, 'message': 'Email and OTP code are required'}), 400
-        
+
         # Find OTP record
         otp_obj = OTP.query.filter_by(email=email).first()
         if not otp_obj:
             return jsonify({'success': False, 'message': 'No OTP found for this email'}), 404
-        
+
         # Verify OTP
         is_valid, message = otp_obj.verify(otp_code)
         if not is_valid:
             return jsonify({'success': False, 'message': message}), 400
-        
+
         # OTP verified
         db.session.commit()
         return jsonify({'success': True, 'message': 'OTP verified successfully'}), 200
-    
+
     except Exception as e:
         print(f"❌ OTP verification error: {str(e)}")
         return jsonify({'success': False, 'message': 'Server error'}), 500
@@ -335,36 +380,36 @@ def reset_password():
         otp_code = payload.get('otp_code') if payload else None
         new_password = payload.get('new_password') if payload else None
         confirm_password = payload.get('confirm_password') if payload else None
-        
+
         if not all([email, otp_code, new_password, confirm_password]):
             return jsonify({'success': False, 'message': 'All fields are required'}), 400
-        
+
         if new_password != confirm_password:
             return jsonify({'success': False, 'message': 'Passwords do not match'}), 400
-        
+
         if len(new_password) < 6:
             return jsonify({'success': False, 'message': 'Password must be at least 6 characters'}), 400
-        
+
         # Verify OTP is valid and verified
         otp_obj = OTP.query.filter_by(email=email).first()
         if not otp_obj or not otp_obj.is_verified:
             return jsonify({'success': False, 'message': 'OTP not verified or expired'}), 400
-        
+
         if otp_obj.is_expired():
             return jsonify({'success': False, 'message': 'OTP has expired'}), 400
-        
+
         # Find user and update password
         user = User.query.filter_by(email=email).first()
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
-        
+
         # Hash and update password
         user.password = generate_password_hash(new_password)
-        
+
         # Delete OTP after use
         db.session.delete(otp_obj)
         db.session.commit()
-        
+
         # Send confirmation email
         try:
             msg = Message(
@@ -394,9 +439,9 @@ def reset_password():
             mail.send(msg)
         except Exception as e:
             print(f"⚠️ Confirmation email failed (but password was reset): {str(e)}")
-        
+
         return jsonify({'success': True, 'message': 'Password reset successfully. Please log in with your new password.'}), 200
-    
+
     except Exception as e:
         db.session.rollback()
         print(f"❌ Password reset error: {str(e)}")

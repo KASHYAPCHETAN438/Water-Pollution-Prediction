@@ -20,7 +20,7 @@ def create_app():
     # By default we allow:
     #   - Local Vite dev frontend:  http://localhost:5173
     #   - Localhost alias:          http://127.0.0.1:5173
-    #   - Render frontend:         https://water-pollution-prediction.onrender.com
+    #   - Render frontend:          https://water-pollution-prediction.onrender.com
     #
     # If you set CORS_ORIGINS in env, that will override this list (comma separated).
     default_origins_list = [
@@ -54,9 +54,11 @@ def create_app():
     # ----------------------------------------------------
 
     # Secret key (used by Flask for session/CSRF etc.)
-    app.config["SECRET_KEY"] = secrets.token_hex(16)
+    # NOTE: In production you should normally fix this via env var,
+    # but for now we generate a random one if missing.
+    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", secrets.token_hex(16))
 
-    # Email configuration
+    # ---------------- Email configuration ----------------
     app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER", "smtp.gmail.com")
     app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT", 587))
     app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS", "True").lower() == "true"
@@ -65,7 +67,10 @@ def create_app():
     app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
     app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_USERNAME")
 
-    # Database configuration
+    if not app.config["MAIL_USERNAME"] or not app.config["MAIL_PASSWORD"]:
+        print("⚠ MAIL_USERNAME or MAIL_PASSWORD missing – SMTP may fail on this instance.")
+
+    # ---------------- Database configuration ----------------
     username = os.getenv("DB_USERNAME")
     password = os.getenv("DB_PASSWORD")
     database = os.getenv("DB_NAME")
@@ -104,7 +109,7 @@ def create_app():
             # Create tables for all registered models
             db.create_all()
 
-            # Register authentication routes
+            # Register authentication routes (login/register/forgot/smtp-test)
             from routes.auth_route import auth_bp
 
             app.register_blueprint(auth_bp, url_prefix="/api/auth")
@@ -125,4 +130,3 @@ app = create_app()
 if __name__ == "__main__":
     # For local development
     app.run(debug=True)
-    
