@@ -17,20 +17,29 @@ def create_app():
     # ----------------------------------------------------
     # CORS configuration
     # ----------------------------------------------------
-    # You can control allowed origins via the CORS_ORIGINS env variable.
-    # If not set, we allow:
+    # By default we allow:
     #   - Local Vite dev frontend:  http://localhost:5173
+    #   - Localhost alias:          http://127.0.0.1:5173
     #   - Render frontend:         https://water-pollution-prediction.onrender.com
-    default_origins = (
-        "http://localhost:5173,"
-        "https://water-pollution-prediction.onrender.com"
-    )
+    #
+    # If you set CORS_ORIGINS in env, that will override this list (comma separated).
+    default_origins_list = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://water-pollution-prediction.onrender.com",
+    ]
 
-    cors_origins_env = os.getenv("CORS_ORIGINS", default_origins)
-    # Support comma-separated list in env var
-    cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    cors_origins_env = os.getenv("CORS_ORIGINS")
+    if cors_origins_env:
+        # Example env value:
+        # CORS_ORIGINS=http://localhost:5173,https://water-pollution-prediction.onrender.com
+        cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+    else:
+        cors_origins = default_origins_list
 
-    # We are using JWT in Authorization header (not cookies),
+    print("✅ CORS allowed origins:", cors_origins)
+
+    # We are using token in Authorization header (not cookies),
     # so supports_credentials=False is enough.
     CORS(
         app,
@@ -45,8 +54,6 @@ def create_app():
     # ----------------------------------------------------
 
     # Secret key (used by Flask for session/CSRF etc.)
-    # Note: regenerating this each start is OK if you do not rely on permanent
-    # server-side sessions.
     app.config["SECRET_KEY"] = secrets.token_hex(16)
 
     # Email configuration
@@ -118,3 +125,4 @@ app = create_app()
 if __name__ == "__main__":
     # For local development
     app.run(debug=True)
+    

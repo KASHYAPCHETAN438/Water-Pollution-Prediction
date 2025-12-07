@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import API_BASE_URL from "../utils/api";
 
 interface ForgotPasswordPageProps {}
 
 const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'email' | 'otp' | 'password'>('email');
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [step, setStep] = useState<"email" | "otp" | "password">("email");
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [countdown, setCountdown] = useState(0);
 
   // Start countdown timer for OTP resend
@@ -34,34 +34,40 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
   // Step 1: Request OTP
   const handleRequestOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setMessage('');
+    setErrorMessage("");
+    setMessage("");
 
     if (!email.trim()) {
-      setErrorMessage('Please enter your email');
+      setErrorMessage("Please enter your email");
       return;
     }
 
     setLoading(true);
     try {
+      console.log("ForgotPassword → sending OTP to:", email);
       const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({} as any));
+      console.log("ForgotPassword → forgot-password response:", response.status, data);
 
-      if (data.success) {
-        setMessage('OTP sent to your email! Check your inbox.');
-        setStep('otp');
-        startCountdown();
-      } else {
-        setErrorMessage(data.message || 'Failed to send OTP');
+      if (!response.ok) {
+        setErrorMessage(data.message || "Failed to send OTP");
+        return;
       }
-    } catch (error) {
-      setErrorMessage('Error sending OTP. Please try again.');
-      console.error('Request OTP error:', error);
+
+      setMessage(data.message || "OTP sent to your email! Check your inbox.");
+      setStep("otp");
+      startCountdown();
+    } catch (error: any) {
+      console.error("Request OTP error:", error);
+      setErrorMessage(error.message || "Error sending OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -70,33 +76,39 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
   // Step 2: Verify OTP
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setMessage('');
+    setErrorMessage("");
+    setMessage("");
 
     if (otp.length !== 6) {
-      setErrorMessage('OTP must be 6 digits');
+      setErrorMessage("OTP must be 6 digits");
       return;
     }
 
     setLoading(true);
     try {
+      console.log("ForgotPassword → verifying OTP:", otp);
       const response = await fetch(`${API_BASE_URL}/api/auth/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ email, otp_code: otp }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({} as any));
+      console.log("ForgotPassword → verify-otp response:", response.status, data);
 
-      if (data.success) {
-        setMessage('OTP verified! Now set your new password.');
-        setStep('password');
-      } else {
-        setErrorMessage(data.message || 'Invalid OTP');
+      if (!response.ok) {
+        setErrorMessage(data.message || "Invalid OTP");
+        return;
       }
-    } catch (error) {
-      setErrorMessage('Error verifying OTP. Please try again.');
-      console.error('Verify OTP error:', error);
+
+      setMessage(data.message || "OTP verified! Now set your new password.");
+      setStep("password");
+    } catch (error: any) {
+      console.error("Verify OTP error:", error);
+      setErrorMessage(error.message || "Error verifying OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -105,29 +117,33 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
   // Step 3: Reset Password
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setMessage('');
+    setErrorMessage("");
+    setMessage("");
 
     if (!newPassword.trim() || !confirmPassword.trim()) {
-      setErrorMessage('Please fill in all password fields');
+      setErrorMessage("Please fill in all password fields");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setErrorMessage('Passwords do not match');
+      setErrorMessage("Passwords do not match");
       return;
     }
 
     if (newPassword.length < 6) {
-      setErrorMessage('Password must be at least 6 characters');
+      setErrorMessage("Password must be at least 6 characters");
       return;
     }
 
     setLoading(true);
     try {
+      console.log("ForgotPassword → resetting password for:", email);
       const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({
           email,
           otp_code: otp,
@@ -136,19 +152,21 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({} as any));
+      console.log("ForgotPassword → reset-password response:", response.status, data);
 
-      if (data.success) {
-        setMessage('Password reset successfully! Redirecting to login...');
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        setErrorMessage(data.message || 'Failed to reset password');
+      if (!response.ok) {
+        setErrorMessage(data.message || "Failed to reset password");
+        return;
       }
-    } catch (error) {
-      setErrorMessage('Error resetting password. Please try again.');
-      console.error('Reset password error:', error);
+
+      setMessage(data.message || "Password reset successfully! Redirecting to login...");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (error: any) {
+      console.error("Reset password error:", error);
+      setErrorMessage(error.message || "Error resetting password. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -157,29 +175,35 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
   // Resend OTP
   const handleResendOTP = async () => {
     if (countdown > 0) return;
-    setErrorMessage('');
-    setMessage('');
+    setErrorMessage("");
+    setMessage("");
     setLoading(true);
 
     try {
+      console.log("ForgotPassword → resend OTP to:", email);
       const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({} as any));
+      console.log("ForgotPassword → resend forgot-password response:", response.status, data);
 
-      if (data.success) {
-        setMessage('OTP resent to your email!');
-        setOtp('');
-        startCountdown();
-      } else {
-        setErrorMessage(data.message || 'Failed to resend OTP');
+      if (!response.ok) {
+        setErrorMessage(data.message || "Failed to resend OTP");
+        return;
       }
-    } catch (error) {
-      setErrorMessage('Error resending OTP. Please try again.');
-      console.error('Resend OTP error:', error);
+
+      setMessage(data.message || "OTP resent to your email!");
+      setOtp("");
+      startCountdown();
+    } catch (error: any) {
+      console.error("Resend OTP error:", error);
+      setErrorMessage(error.message || "Error resending OTP. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -204,9 +228,23 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
 
         {/* Progress Steps */}
         <div className="flex justify-between mb-8">
-          <div className={`flex-1 h-2 rounded-full mx-1 transition-colors ${step === 'email' || step === 'otp' || step === 'password' ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
-          <div className={`flex-1 h-2 rounded-full mx-1 transition-colors ${step === 'otp' || step === 'password' ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
-          <div className={`flex-1 h-2 rounded-full mx-1 transition-colors ${step === 'password' ? 'bg-blue-500' : 'bg-gray-200'}`}></div>
+          <div
+            className={`flex-1 h-2 rounded-full mx-1 transition-colors ${
+              step === "email" || step === "otp" || step === "password"
+                ? "bg-blue-500"
+                : "bg-gray-200"
+            }`}
+          ></div>
+          <div
+            className={`flex-1 h-2 rounded-full mx-1 transition-colors ${
+              step === "otp" || step === "password" ? "bg-blue-500" : "bg-gray-200"
+            }`}
+          ></div>
+          <div
+            className={`flex-1 h-2 rounded-full mx-1 transition-colors ${
+              step === "password" ? "bg-blue-500" : "bg-gray-200"
+            }`}
+          ></div>
         </div>
 
         {/* Messages */}
@@ -230,7 +268,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
         )}
 
         {/* Step 1: Email */}
-        {step === 'email' && (
+        {step === "email" && (
           <motion.form
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -255,11 +293,11 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50"
             >
-              {loading ? '⏳ Sending...' : '📬 Send OTP'}
+              {loading ? "⏳ Sending..." : "📬 Send OTP"}
             </button>
             <button
               type="button"
-              onClick={() => navigate('/login')}
+              onClick={() => navigate("/login")}
               className="w-full text-blue-600 py-2 hover:underline"
             >
               Back to Login
@@ -268,7 +306,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
         )}
 
         {/* Step 2: OTP Verification */}
-        {step === 'otp' && (
+        {step === "otp" && (
           <motion.form
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -284,7 +322,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
                 maxLength={6}
                 value={otp}
                 onChange={(e) =>
-                  setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
+                  setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
                 }
                 placeholder="000000"
                 className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 transition text-center text-2xl tracking-widest font-mono"
@@ -299,7 +337,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
               disabled={loading || otp.length !== 6}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50"
             >
-              {loading ? '⏳ Verifying...' : '✅ Verify OTP'}
+              {loading ? "⏳ Verifying..." : "✅ Verify OTP"}
             </button>
             <button
               type="button"
@@ -307,13 +345,13 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
               disabled={countdown > 0 || loading}
               className="w-full text-blue-600 py-2 hover:underline disabled:opacity-50"
             >
-              {countdown > 0 ? `Resend OTP in ${countdown}s` : '🔄 Resend OTP'}
+              {countdown > 0 ? `Resend OTP in ${countdown}s` : "🔄 Resend OTP"}
             </button>
           </motion.form>
         )}
 
         {/* Step 3: Password Reset */}
-        {step === 'password' && (
+        {step === "password" && (
           <motion.form
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -354,7 +392,7 @@ const ForgotPassword: React.FC<ForgotPasswordPageProps> = () => {
               disabled={loading}
               className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50"
             >
-              {loading ? '⏳ Resetting...' : '🎉 Reset Password'}
+              {loading ? "⏳ Resetting..." : "🎉 Reset Password"}
             </button>
           </motion.form>
         )}

@@ -6,7 +6,8 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   // Take API From Base URL .env File (optional but best)
-  const API_BASE_URL = env.VITE_API_BASE_URL || 'http://localhost:5000';
+  //const API_BASE_URL = env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const API_BASE_URL =  'http://localhost:5000';
 
   return {
     server: {
