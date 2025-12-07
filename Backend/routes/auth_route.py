@@ -49,18 +49,28 @@ def validate_token(token):
 @auth_bp.route('/smtp-test', methods=['GET'])
 def smtp_test():
     """
-    Simple endpoint to test SMTP connectivity + login from Render.
+    Simple endpoint to test SMTP connectivity + login.
     HIT: GET /api/auth/smtp-test
     """
-    email = os.getenv("MAIL_USERNAME")
-    password = os.getenv("MAIL_PASSWORD")
+
+    # Prefer Flask config (app.config) but fallback to env if needed
+    email = current_app.config.get("MAIL_USERNAME") or os.getenv("MAIL_USERNAME")
+    password = current_app.config.get("MAIL_PASSWORD") or os.getenv("MAIL_PASSWORD")
+
+    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com")
+    port = int(current_app.config.get("MAIL_PORT", 587))
+    use_tls = str(current_app.config.get("MAIL_USE_TLS", "True")).lower() == "true"
+    use_ssl = str(current_app.config.get("MAIL_USE_SSL", "False")).lower() == "true"
 
     try:
-        current_app.logger.info("SMTP TEST: connecting to smtp.gmail.com:587")
-        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)  # 10-second timeout
+        current_app.logger.info(f"SMTP TEST: connecting to {host}:{port}")
+        server = smtplib.SMTP(host, port, timeout=10)  # 10-second timeout
         server.ehlo()
-        server.starttls()
-        server.ehlo()
+
+        # TLS (STARTTLS) use kar rahe ho to
+        if use_tls and not use_ssl:
+            server.starttls()
+            server.ehlo()
 
         current_app.logger.info("SMTP TEST: logging in as %s", email)
         server.login(email, password)
