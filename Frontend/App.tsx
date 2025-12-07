@@ -6,6 +6,10 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
+
+import "./styles/index.css";
+
+
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Navbar from "./components/Navbar";

@@ -2,9 +2,9 @@ import React from "react";
 import { motion } from "framer-motion";
 
 // Import images
-import pollutionImg from "../assets/pollution.jpg";
-import diseaseImg from "../assets/diseases.jpg";
-import predictionImg from "../assets/prediction.jpg";
+import pollutionImg from "../public/pollution.jpg";
+import diseaseImg from "../public/diseases.jpg";
+import predictionImg from "../public/prediction.jpg";
 
 // -----------------------------------------
 // Reusable InfoBox Component

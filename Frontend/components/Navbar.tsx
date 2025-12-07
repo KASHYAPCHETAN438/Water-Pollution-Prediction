@@ -23,7 +23,7 @@ const Navbar: React.FC = () => {
         <NavLink to="/" 
         className="flex items-center gap-3 text-xl font-bold text-blue-600 no-underline">
         <img 
-          src="/assets/logo.png" 
+          src="/public/logo.png" 
           alt="Logo" 
           className="w-10 h-10 object-contain" 
           />
