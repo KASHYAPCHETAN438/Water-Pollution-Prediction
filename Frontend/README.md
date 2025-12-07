@@ -1,20 +1,106 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+   
+# 🌊 Water Pollution Prediction System  
 </div>
 
-# Run and deploy your AI Studio app
+<br>
+<br>
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/temp/2
-
-## Run Locally
-
-**Prerequisites:**  Node.js
+## 🚀 Live Demo:  
+            👉 https://water-pollution-prediction.onrender.com  
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+
+---
+
+## ✨ Key Features
+✔ Predict Tap & River water quality in seconds  
+✔ Clean & modern animated UI  
+✔ ML-powered dynamic prediction  
+✔ Fully responsive – mobile friendly  
+✔ Lightweight & fast ⚡ (Vite + React)
+
+---
+
+## 🧠 Tech Stack
+
+| Technology | Usage |
+|----------|-------|
+| React + TypeScript | Frontend UI |
+| Vite | Fast development & build |
+| TailwindCSS | Styling & layout |
+| Framer Motion | Smooth animations |
+
+
+---
+
+## 🖥️ Run Project Locally (Frontend Only)
+
+To run the React app on your system, follow these steps 👇
+
+### 📌 Requirement
+- Install **Node.js**
+
+---
+
+### 🚀 Setup Instructions
+```sh
+# 1️⃣ Navigate to frontend folder
+cd frontend
+
+# 2️⃣ Install dependencies
+npm install
+
+# 3️⃣ Create .env.local file and add API key
+echo "VITE_GEMINI_API_KEY=your_api_key_here" > .env.local
+
+# 4️⃣ Start local server
+npm run dev
+
+```
+---
+
+<br>
+
+### 📸 WebSite Preview
+
+<br>
+<img width="1352" height="608" alt="image" src="https://github.com/user-attachments/assets/96380da5-39c2-4aef-82e3-03e90a0c7112" />
+
+
+<br>
+<br>
+
+---
+
+<br>
+<br>
+
+<img width="1353" height="604" alt="image" src="https://github.com/user-attachments/assets/28bd396d-1995-4433-a963-036dc1a984a0" />
+
+
+<br>
+<br>
+
+---
+
+<br>
+<br>
+
+<img width="1350" height="605" alt="image" src="https://github.com/user-attachments/assets/b87b8a47-b7e4-48b7-bf9a-74d06a3d7510" />
+
+<br>
+<br>
+
+---
+
+
+<br>
+<br>
+
+
+<br>
+
+
+<br>
+
