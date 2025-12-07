@@ -19,6 +19,19 @@ auth_bp = Blueprint('auth_bp', __name__)
 # Token expiry time in seconds (1 hour = 3600 seconds)
 TOKEN_EXPIRY = 3600
 
+"""
+IMPORTANT (for Brevo SMTP):
+
+Flask config / .env me ye values set karo:
+
+MAIL_SERVER = 'smtp-relay.brevo.com'
+MAIL_PORT = 587
+MAIL_USE_TLS = True
+MAIL_USE_SSL = False
+MAIL_USERNAME = '<your Brevo SMTP login email>'
+MAIL_PASSWORD = '<your Brevo SMTP key>'   # SMTP key, NOT API key
+"""
+
 
 def make_serializer():
     secret = current_app.config.get('SECRET_KEY', None)
@@ -51,24 +64,34 @@ def smtp_test():
     """
     Simple endpoint to test SMTP connectivity + login.
     HIT: GET /api/auth/smtp-test
+
+    Ye route ab Brevo SMTP ke liye bhi kaam karega,
+    bas config / env sahi set honi chahiye (MAIL_* vars).
     """
 
     # Prefer Flask config (app.config) but fallback to env if needed
     email = current_app.config.get("MAIL_USERNAME") or os.getenv("MAIL_USERNAME")
     password = current_app.config.get("MAIL_PASSWORD") or os.getenv("MAIL_PASSWORD")
 
-    host = current_app.config.get("MAIL_SERVER", "smtp.gmail.com")
+    # Brevo defaults
+    host = current_app.config.get("MAIL_SERVER", "smtp-relay.brevo.com")
     port = int(current_app.config.get("MAIL_PORT", 587))
     use_tls = str(current_app.config.get("MAIL_USE_TLS", "True")).lower() == "true"
     use_ssl = str(current_app.config.get("MAIL_USE_SSL", "False")).lower() == "true"
 
     try:
         current_app.logger.info(f"SMTP TEST: connecting to {host}:{port}")
-        server = smtplib.SMTP(host, port, timeout=10)  # 10-second timeout
+        if use_ssl:
+            # If you ever switch to port 465 + SSL
+            server = smtplib.SMTP_SSL(host, port, timeout=10)
+        else:
+            server = smtplib.SMTP(host, port, timeout=10)
+
         server.ehlo()
 
         # TLS (STARTTLS) use kar rahe ho to
         if use_tls and not use_ssl:
+            current_app.logger.info("SMTP TEST: starting TLS")
             server.starttls()
             server.ehlo()
 
