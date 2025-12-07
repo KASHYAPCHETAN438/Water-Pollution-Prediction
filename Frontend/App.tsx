@@ -1,4 +1,4 @@
-// src/App.tsx
+// Frontend/App.tsx
 import React, {
   useState,
   createContext,
@@ -19,6 +19,7 @@ import Portfolio from "./pages/Portfolio";
 import Prediction from "./pages/Prediction";
 import ForgotPassword from "./pages/ForgotPassword";
 
+// ================== Auth Context Types ==================
 interface AuthContextType {
   token: string | null;
   isAuthenticated: boolean;
@@ -40,11 +41,13 @@ export const useAuth = () => {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
+// ================== Auth Provider ==================
 const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [token, setToken] = useState<string | null>(
     localStorage.getItem("token")
   );
 
+  // Load token from localStorage on first render
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
@@ -120,11 +123,13 @@ const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   );
 };
 
+// ================== Protected Route ==================
 const ProtectedRoute: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
+// ================== Main App ==================
 function App() {
   return (
     <AuthProvider>
